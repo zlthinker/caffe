@@ -49,7 +49,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Forward_gpu(
       outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
   Dtype loss;
   vector<Dtype> loss_vec(nthreads);
-  caffe_gpu_memcpy(nthreads * sizeof(Dtype), loss_data, &loss_vec[0]);
+  caffe_gpu_memcpy(nthreads * sizeof(Dtype), loss_data, &(loss_vec[0]));
   sort (loss_vec.begin(), loss_vec.end());
   Dtype valid_count = -1;
   if (has_ignore_label_) {

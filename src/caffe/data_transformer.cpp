@@ -294,6 +294,20 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   CHECK(cv_cropped_img.data);
 
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+  // normalize
+  vector<cv::Mat> split_img(cv_cropped_img.channels());
+  cv::split(cv_cropped_img, &(split_img[0]));
+  cv::Mat mean_img = cv::Mat::zeros(cv_cropped_img.channels(), 1, CV_64F);
+  cv::Mat std_img = cv::Mat::ones(cv_cropped_img.channels(), 1, CV_64F);
+  const bool normalize = param_.normalize();
+  if (normalize) {
+	  cv::meanStdDev(cv_cropped_img, mean_img, std_img);
+	  for(size_t i = 0; i < cv_cropped_img.channels(); i++) {
+		  if (std_img.at<double>(i, 0) < 1E-6) {
+			  std_img.at<double>(i, 0) = 1;
+		  }
+	  }
+  }
   int top_index;
   for (int h = 0; h < height; ++h) {
     const uchar* ptr = cv_cropped_img.ptr<uchar>(h);
@@ -319,6 +333,9 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
             transformed_data[top_index] = pixel * scale;
           }
         }
+		if (normalize) {
+			 transformed_data[top_index] = (pixel - mean_img.at<double>(c, 0)) / std_img.at<double>(c, 0);
+		}
       }
     }
   }
