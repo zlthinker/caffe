@@ -432,9 +432,24 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
-  // Normalization, note this is the last step for this augumentation, even you have
-  // mean substraction
+  // Below options are valid only when with openCV support
+  // Normalization, note this is the last step in augumentation process
+  // even you have mean substraction.
   optional bool normalize = 8 [default = false];
+  // Zoom in/out augumentation.
+  optional bool zoom = 9 [default = false];
+  optional uint32 zoom_scale = 10;
+  // Rotate augumentation.
+  optional bool rotate = 11 [default = false];
+  optional uint32 rotate_deg = 12;
+  // Translation augumentation.
+  optional bool translate = 14 [default = false];
+  optional uint32 trans_x = 15;
+  optional uint32 trans_y = 16;
+  // If you don't want randomly crop but only center crop.
+  optional bool fix_crop = 17 [default = false];
+  // If you want apply different augmentation on each channel.
+  optional bool aug_each_channel = 18 [default = false];
 }
 
 // Message that stores parameters shared by loss layers
