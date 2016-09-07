@@ -340,6 +340,9 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   }
   CHECK(output_img.data);
   // done! transformation
+  split_img.clear();
+  split_img.resize(channels);
+  cv::split(output_img, &(split_img[0]));
   const bool normalize = param_.normalize();
   // substraction mean value
   if (has_mean_values) {
