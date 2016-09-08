@@ -2,17 +2,17 @@
 #include <cfloat>
 #include <vector>
 
-#include "caffe/layers/softmax_loss_miming_layer.hpp"
+#include "caffe/layers/softmax_loss_mining_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
 
 template <typename Dtype>
-void SoftmaxWithLossMimingLayer<Dtype>::LayerSetUp(
+void SoftmaxWithLossMiningLayer<Dtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   LossLayer<Dtype>::LayerSetUp(bottom, top);
 
-  miming_ratio_ = this->layer_param_.miming_param().miming_ratio();
+  mining_ratio_ = this->layer_param_.mining_param().mining_ratio();
 
   LayerParameter softmax_param(this->layer_param_);
   softmax_param.set_type("Softmax");
@@ -31,7 +31,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::LayerSetUp(
 }
 
 template <typename Dtype>
-void SoftmaxWithLossMimingLayer<Dtype>::Reshape(
+void SoftmaxWithLossMiningLayer<Dtype>::Reshape(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   LossLayer<Dtype>::Reshape(bottom, top);
   softmax_layer_->Reshape(softmax_bottom_vec_, softmax_top_vec_);
@@ -51,7 +51,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Reshape(
 }
 
 template <typename Dtype>
-Dtype SoftmaxWithLossMimingLayer<Dtype>::get_normalizer(
+Dtype SoftmaxWithLossMiningLayer<Dtype>::get_normalizer(
 		int valid_count) {
   Dtype normalizer;
   if (valid_count == -1) {
@@ -65,7 +65,7 @@ Dtype SoftmaxWithLossMimingLayer<Dtype>::get_normalizer(
 }
 
 template <typename Dtype>
-void SoftmaxWithLossMimingLayer<Dtype>::Forward_cpu(
+void SoftmaxWithLossMiningLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   // The forward pass computes the softmax prob values.
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
@@ -92,7 +92,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Forward_cpu(
     }
   }
   sort (loss_vec.begin(), loss_vec.end());
-  const int start_idx = floor(loss_vec.size() / (1.0 / miming_ratio_ + 1));
+  const int start_idx = floor(loss_vec.size() / (1.0 / mining_ratio_ + 1));
   count -= start_idx;
   for (int i = start_idx; i < loss_vec.size(); i++) {
 	loss -= loss_vec[i];
@@ -104,7 +104,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Forward_cpu(
 }
 
 template <typename Dtype>
-void SoftmaxWithLossMimingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void SoftmaxWithLossMiningLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
@@ -138,10 +138,10 @@ void SoftmaxWithLossMimingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>&
 }
 
 #ifdef CPU_ONLY
-STUB_GPU(SoftmaxWithLossMimingLayer);
+STUB_GPU(SoftmaxWithLossMiningLayer);
 #endif
 
-INSTANTIATE_CLASS(SoftmaxWithLossMimingLayer);
-REGISTER_LAYER_CLASS(SoftmaxWithLossMiming);
+INSTANTIATE_CLASS(SoftmaxWithLossMiningLayer);
+REGISTER_LAYER_CLASS(SoftmaxWithLossMining);
 
 }  // namespace caffe

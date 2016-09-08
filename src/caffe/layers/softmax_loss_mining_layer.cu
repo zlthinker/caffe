@@ -2,13 +2,13 @@
 #include <cfloat>
 #include <vector>
 
-#include "caffe/layers/softmax_loss_miming_layer.hpp"
+#include "caffe/layers/softmax_loss_mining_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
 
 template <typename Dtype>
-__global__ void SoftmaxLossMimingForwardGPU(const int nthreads,
+__global__ void SoftmaxLossMiningForwardGPU(const int nthreads,
           const Dtype* prob_data, const Dtype* label, Dtype* loss,
           const int num, const int dim, const int spatial_dim,
           const bool has_ignore_label_, const int ignore_label_,
@@ -29,7 +29,7 @@ __global__ void SoftmaxLossMimingForwardGPU(const int nthreads,
 }
 
 template <typename Dtype>
-void SoftmaxWithLossMimingLayer<Dtype>::Forward_gpu(
+void SoftmaxWithLossMiningLayer<Dtype>::Forward_gpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
   const Dtype* prob_data = prob_.gpu_data();
@@ -44,7 +44,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Forward_gpu(
   // to avoid having to allocate additional GPU memory.
   Dtype* counts = prob_.mutable_gpu_diff();
   // NOLINT_NEXT_LINE(whitespace/operators)
-  SoftmaxLossMimingForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
+  SoftmaxLossMiningForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
       CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,
       outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
   Dtype loss;
@@ -57,7 +57,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Forward_gpu(
   } else {
 	  valid_count = nthreads;
   }
-  const int start_idx = floor(loss_vec.size() / (1.0 / miming_ratio_ + 1));
+  const int start_idx = floor(loss_vec.size() / (1.0 / mining_ratio_ + 1));
   // Only launch another CUDA kernel if we actually need the count of valid
   // outputs.
   caffe_gpu_asum(valid_count - start_idx, &loss_vec[nthreads - valid_count + start_idx], &loss);
@@ -68,7 +68,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Forward_gpu(
 }
 
 template <typename Dtype>
-__global__ void SoftmaxLossMimingBackwardGPU(const int nthreads, const Dtype* top,
+__global__ void SoftmaxLossMiningBackwardGPU(const int nthreads, const Dtype* top,
           const Dtype* label, Dtype* bottom_diff, const int num, const int dim,
           const int spatial_dim, const bool has_ignore_label_,
           const int ignore_label_, Dtype* counts) {
@@ -92,7 +92,7 @@ __global__ void SoftmaxLossMimingBackwardGPU(const int nthreads, const Dtype* to
 }
 
 template <typename Dtype>
-void SoftmaxWithLossMimingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+void SoftmaxWithLossMiningLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
@@ -110,7 +110,7 @@ void SoftmaxWithLossMimingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>&
     // we use to to avoid allocating new GPU memory.
     Dtype* counts = prob_.mutable_gpu_diff();
     // NOLINT_NEXT_LINE(whitespace/operators)
-    SoftmaxLossMimingBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
+    SoftmaxLossMiningBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
         CAFFE_CUDA_NUM_THREADS>>>(nthreads, top_data, label, bottom_diff,
         outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
 
@@ -128,6 +128,6 @@ void SoftmaxWithLossMimingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>&
   }
 }
 
-INSTANTIATE_LAYER_GPU_FUNCS(SoftmaxWithLossMimingLayer);
+INSTANTIATE_LAYER_GPU_FUNCS(SoftmaxWithLossMiningLayer);
 
 }  // namespace caffe

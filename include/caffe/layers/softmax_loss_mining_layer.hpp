@@ -1,5 +1,5 @@
-#ifndef CAFFE_SOFTMAX_WITH_LOSS_MIMING_LAYER_HPP_
-#define CAFFE_SOFTMAX_WITH_LOSS_MIMING_LAYER_HPP_
+#ifndef CAFFE_SOFTMAX_WITH_LOSS_MINING_LAYER_HPP_
+#define CAFFE_SOFTMAX_WITH_LOSS_MINING_LAYER_HPP_
 
 #include <vector>
 
@@ -41,7 +41,7 @@ namespace caffe {
  *      @f$, for softmax output class probabilites @f$ \hat{p} @f$
  */
 template <typename Dtype>
-class SoftmaxWithLossMimingLayer : public LossLayer<Dtype> {
+class SoftmaxWithLossMiningLayer : public LossLayer<Dtype> {
  public:
    /**
     * @param param provides LossParameter loss_param, with options:
@@ -51,7 +51,7 @@ class SoftmaxWithLossMimingLayer : public LossLayer<Dtype> {
     *    If true, the loss is normalized by the number of (nonignored) labels
     *    present; otherwise the loss is simply summed over spatial locations.
     */
-  explicit SoftmaxWithLossMimingLayer(const LayerParameter& param)
+  explicit SoftmaxWithLossMiningLayer(const LayerParameter& param)
       : LossLayer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
@@ -120,9 +120,9 @@ class SoftmaxWithLossMimingLayer : public LossLayer<Dtype> {
   int ignore_label_;
 
   int softmax_axis_, outer_num_, inner_num_;
-  Dtype miming_ratio_;
+  Dtype mining_ratio_;
 };
 
 }  // namespace caffe
 
-#endif  // CAFFE_SOFTMAX_WITH_LOSS_MIMING_LAYER_HPP_
+#endif  // CAFFE_SOFTMAX_WITH_LOSS_MINING_LAYER_HPP_
