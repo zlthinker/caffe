@@ -57,7 +57,7 @@ void SoftmaxWithLossMiningLayer<Dtype>::Forward_gpu(
   } else {
 	  valid_count = nthreads;
   }
-  const int start_idx = floor(loss_vec.size() / (1.0 / mining_ratio_ + 1));
+  const int start_idx = floor(loss_vec.size() * (1.0 - 1.0 / mining_ratio_ ));
   // Only launch another CUDA kernel if we actually need the count of valid
   // outputs.
   caffe_gpu_asum(valid_count - start_idx, &loss_vec[nthreads - valid_count + start_idx], &loss);

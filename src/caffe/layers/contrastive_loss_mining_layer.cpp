@@ -46,29 +46,35 @@ void ContrastiveLossMiningLayer<Dtype>::Forward_cpu(
       this->layer_param_.contrastive_loss_param().legacy_version();
   Dtype loss(0.0);
 
-  vector<Dtype> loss_vec;
+  vector<Dtype> loss_vec_pos;
+  vector<Dtype> loss_vec_neg;
 
   for (int i = 0; i < bottom[0]->num(); ++i) {
     dist_sq_.mutable_cpu_data()[i] = caffe_cpu_dot(channels,
         diff_.cpu_data() + (i*channels), diff_.cpu_data() + (i*channels));
     if (static_cast<int>(bottom[2]->cpu_data()[i])) {  // similar pairs
-      loss_vec.push_back(dist_sq_.cpu_data()[i]);
+      loss_vec_pos.push_back(dist_sq_.cpu_data()[i]);
     } else {  // dissimilar pairs
       if (legacy_version) {
-        loss_vec.push_back(std::max(margin - dist_sq_.cpu_data()[i], Dtype(0.0)));
+        loss_vec_neg.push_back(std::max(margin - dist_sq_.cpu_data()[i], Dtype(0.0)));
       } else {
         Dtype dist = std::max<Dtype>(margin - sqrt(dist_sq_.cpu_data()[i]),
           Dtype(0.0));
-        loss_vec.push_back(dist*dist);
+        loss_vec_neg.push_back(dist*dist);
       }
     }
   }
-  sort (loss_vec.begin(), loss_vec.end());
-  const int start_idx = floor(loss_vec.size() / (1.0 / mining_ratio_ + 1 ));
-  for (int i = start_idx; i < loss_vec.size(); i++) {
-    loss += loss_vec[i];
+  sort (loss_vec_pos.begin(), loss_vec_pos.end());
+  sort (loss_vec_neg.begin(), loss_vec_neg.end());
+  const int start_idx_pos = floor(loss_vec_pos.size() * (1.0 - 1.0 / mining_ratio_ ));
+  const int start_idx_neg = floor(loss_vec_neg.size() * (1.0 - 1.0 / mining_ratio_ ));
+  for (int i = start_idx_pos; i < loss_vec_pos.size(); i++) {
+    loss += loss_vec_pos[i];
   }
-  loss = loss / (static_cast<Dtype>(bottom[0]->num()) - start_idx)/ Dtype(2);
+  for (int i = start_idx_neg; i < loss_vec_neg.size(); i++) {
+    loss += loss_vec_neg[i];
+  }
+  loss = loss / (static_cast<Dtype>(bottom[0]->num()) - start_idx_pos - start_idx_neg)/ Dtype(2);
   top[0]->mutable_cpu_data()[0] = loss;
 }
 

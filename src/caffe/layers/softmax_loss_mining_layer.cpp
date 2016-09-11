@@ -92,7 +92,7 @@ void SoftmaxWithLossMiningLayer<Dtype>::Forward_cpu(
     }
   }
   sort (loss_vec.begin(), loss_vec.end());
-  const int start_idx = floor(loss_vec.size() / (1.0 / mining_ratio_ + 1));
+  const int start_idx = floor(loss_vec.size() * (1.0 - 1.0 / mining_ratio_ ));
   count -= start_idx;
   for (int i = start_idx; i < loss_vec.size(); i++) {
 	loss -= loss_vec[i];
