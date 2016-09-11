@@ -275,6 +275,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 // *********************
   vector<cv::Mat> split_img(channels);
   cv::split(cv_img, &(split_img[0]));
+  //cv::imwrite("/Users/LuoZixin/Desktop/1_raw.jpg", split_img[0]);
+  //cv::imwrite("/Users/LuoZixin/Desktop/2_raw.jpg", split_img[1]);
   const bool fix_crop = param_.fix_crop();
   const int affine_matrix_num = param_.aug_each_channel() ? channels : 1;
   cv::Mat output_img;
@@ -297,7 +299,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 	  }
 	  // zoom
 	  if (param_.zoom()) {
-		  float zoom_scale = 1.0 + (param_.zoom_scale() - Rand(param_.zoom_scale() * 2))/ 100.0;
+		  int tmp = (param_.zoom_scale() - Rand(param_.zoom_scale() * 2));
+		  float zoom_scale = (100.0 + tmp) / 100.0;
 		  for (size_t i = 0; i < 3; i++) {
 		  transform_matrix.at<double>(0, i) *= zoom_scale;
 		  transform_matrix.at<double>(1, i) *= zoom_scale;
@@ -338,6 +341,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   if (param_.aug_each_channel()) {
 	  cv::merge(output_img_part, output_img);
   }
+  //cv::imwrite("/Users/LuoZixin/Desktop/1.jpg", output_img_part[0]);
+  //cv::imwrite("/Users/LuoZixin/Desktop/2.jpg", output_img_part[1]);
   CHECK(output_img.data);
   // done! transformation
   split_img.clear();
@@ -605,6 +610,9 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(
 template <typename Dtype>
 void DataTransformer<Dtype>::InitRand() {
   const bool needs_rand = param_.mirror() ||
+	  param_.zoom() ||
+	  param_.rotate() ||
+	  param_.translate() ||
       (phase_ == TRAIN && param_.crop_size());
   if (needs_rand) {
     const unsigned int rng_seed = caffe_rng_rand();
