@@ -275,8 +275,6 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 // *********************
   vector<cv::Mat> split_img(channels);
   cv::split(cv_img, &(split_img[0]));
-  //cv::imwrite("/Users/LuoZixin/Desktop/1_raw.jpg", split_img[0]);
-  //cv::imwrite("/Users/LuoZixin/Desktop/2_raw.jpg", split_img[1]);
   const bool fix_crop = param_.fix_crop();
   const int affine_matrix_num = param_.aug_each_channel() ? channels : 1;
   cv::Mat output_img;
@@ -341,8 +339,6 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   if (param_.aug_each_channel()) {
 	  cv::merge(output_img_part, output_img);
   }
-  //cv::imwrite("/Users/LuoZixin/Desktop/1.jpg", output_img_part[0]);
-  //cv::imwrite("/Users/LuoZixin/Desktop/2.jpg", output_img_part[1]);
   CHECK(output_img.data);
   // done! transformation
   split_img.clear();
@@ -378,38 +374,6 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 	  caffe_copy(output_img.rows*output_img.cols, (Dtype*)split_img[i].data,
 			  transformed_data+i*output_img.rows*output_img.cols);
   }
-// *********************
-  //int top_index;
-  //for (int h = 0; h < height; ++h) {
-    //const uchar* ptr = cv_cropped_img.ptr<uchar>(h);
-    //int img_index = 0;
-    //for (int w = 0; w < width; ++w) {
-      //for (int c = 0; c < img_channels; ++c) {
-        //if (do_mirror) {
-          //top_index = (c * height + h) * width + (width - 1 - w);
-        //} else {
-          //top_index = (c * height + h) * width + w;
-        //}
-        //// int top_index = (c * height + h) * width + w;
-        //Dtype pixel = static_cast<Dtype>(ptr[img_index++]);
-        //if (has_mean_file) {
-          //int mean_index = (c * img_height + h_off + h) * img_width + w_off + w;
-          //transformed_data[top_index] =
-            //(pixel - mean[mean_index]) * scale;
-        //} else {
-          //if (has_mean_values) {
-            //transformed_data[top_index] =
-              //(pixel - mean_values_[c]) * scale;
-          //} else {
-            //transformed_data[top_index] = pixel * scale;
-          //}
-        //}
-		//if (normalize) {
-			 //transformed_data[top_index] = (pixel - mean_img.at<double>(c, 0)) / std_img.at<double>(c, 0);
-		//}
-      //}
-	//}
-  //}
 }
 #endif  // USE_OPENCV
 
