@@ -409,6 +409,9 @@ message LayerParameter {
   // added by zixin - 06/09/2016
   // for loss layer marked with 'mining', aiming to enhance training efficiency.
   optional MiningParameter mining_param = 149;
+  // added by zixin - 14/09/2016
+  // for matrix-matrix multiplication
+  optional DotProductParameter dot_product_param = 150;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1431,4 +1434,14 @@ message MiningParameter {
   // forward K1 samples, but use only K2 samples with highest training loss for back-propagation
   // the mining_ratio r = K1 / K2
   optional float mining_ratio = 1;
+}
+// added by zixin - 14/09/2016
+message DotProductParameter {
+  enum Mode {
+    VV=0;
+    VM=1;
+    MV=2;
+    MM=3;
+  }
+  optional Mode mode = 1 [default = VV];
 }
