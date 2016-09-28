@@ -1,3 +1,6 @@
+# NOTE
+when compiled in Centos, use cmake -DBLAS=open .., then make.
+
 # Caffe
 
 ## Specific git usage for working with caffe
