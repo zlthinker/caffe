@@ -1,7 +1,7 @@
 #include <vector>
 
 #include "caffe/layer.hpp"
-#include "caffe/data_output_layer.hpp"
+#include "caffe/layers/data_output_layer.hpp"
 
 using namespace cv;
 
@@ -38,7 +38,10 @@ void DataOutputLayer<Dtype>::Reshape(
   // assign
   for(size_t i=0;i<bottom.size();i++) {
     bottom_num[i]=bottom[i]->num();
-    bottom_num_stride[i]=bottom[i]->count(1);
+	if (bottom[i] -> count(0) != 1)
+		bottom_num_stride[i]=bottom[i]->count(1);
+	else
+		bottom_num_stride[i]=1;
   }
 }
 
@@ -46,10 +49,6 @@ template <typename Dtype>
 void DataOutputLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top)
 {
-  if(Caffe::getThreadId()!=0) {
-    return;
-  }
-
   // output
   for(size_t i=0;i<file_name.size();i++) {
     const Dtype* bottom_data=bottom[i]->cpu_data();
