@@ -403,6 +403,9 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  
+  optional DataOutputParameter data_output_param = 233;
+
 }
 
 // Message that stores parameters used to apply transformation
@@ -1397,3 +1400,15 @@ message PReLUParameter {
   // Whether or not slope paramters are shared across channels.
   optional bool channel_shared = 2 [default = false];
 }
+message DataOutputParameter
+{
+  repeated string file_name = 1;
+  enum FileType {
+      TEXT = 0;
+	      BINARY = 1;
+		    
+  }
+    optional FileType type = 2 [default = TEXT];
+
+}
+
