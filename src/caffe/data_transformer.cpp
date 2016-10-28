@@ -272,6 +272,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   }
 
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+  LOG(INFO) << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 // *********************
   vector<cv::Mat> split_img(channels);
   cv::split(cv_img, &(split_img[0]));

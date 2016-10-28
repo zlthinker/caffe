@@ -415,6 +415,8 @@ message LayerParameter {
   // added by zixin - 20/09/2016
   // for spatial transformation
   optional SpatialTransformerParameter st_param = 151;
+  // added by zixin - 29/09/2016
+  optional DataOutputParameter data_output_param = 233;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1469,5 +1471,15 @@ message SpatialTransformerParameter {
   optional double theta_2_1 = 9;
   optional double theta_2_2 = 10;
   optional double theta_2_3 = 11;
+}
+// added by zixin - 29/09/2016
+message DataOutputParameter
+{
+  repeated string file_name = 1;
+  enum FileType {
+    TEXT = 0;
+    BINARY = 1;
+  }
+  optional FileType type = 2 [default = TEXT];
 }
 
