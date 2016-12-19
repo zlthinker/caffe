@@ -272,7 +272,6 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   }
 
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
-  LOG(INFO) << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 // *********************
   vector<cv::Mat> split_img(channels);
   cv::split(cv_img, &(split_img[0]));
@@ -284,9 +283,9 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   for(size_t l = 0; l < affine_matrix_num; l++) {
 	  // rotate
 	  cv::Point2f center(img_width/2.0 - 0.5, img_height/2.0 - 0.5);
-	  int rotate_deg = .0;
+	  double rotate_deg = .0;
 	  if (param_.rotate()) {
-		  rotate_deg = param_.rotate_deg() - Rand(param_.rotate_deg() * 2);
+		  rotate_deg = (double)param_.rotate_deg() - (double)Rand(param_.rotate_deg() * 2);
 	  }
 	  cv::Mat transform_matrix = cv::getRotationMatrix2D(center, rotate_deg, 1);
 	  // translate

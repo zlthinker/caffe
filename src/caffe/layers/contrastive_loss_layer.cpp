@@ -57,6 +57,7 @@ void ContrastiveLossLayer<Dtype>::Forward_cpu(
       }
     }
   }
+  LOG(INFO) << bottom[0]->num();
   loss = loss / static_cast<Dtype>(bottom[0]->num()) / Dtype(2);
   top[0]->mutable_cpu_data()[0] = loss;
 }
