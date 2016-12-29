@@ -36,7 +36,7 @@ template <typename Dtype>
 		CHECK(top[0]->count()*2 == bottom[0]->count()) << "Error: in Forward_cpu of ATan2Layer.";
 
 		for(int index = 0; index < top[0]->count(); index++) {
-			output[index] = atan2(input[2*index + 1], input[2*index]);
+			output[index] = atan2(input[2*index], input[2*index + 1]);
 		}
 	}
 
@@ -51,12 +51,12 @@ template <typename Dtype>
 		CHECK(top[0]->count()*2 == bottom[0]->count()) << "Error: in Backward_cpu of ATan2Layer.";
 
 		for(int index = 0; index < top[0]->count(); index++) {
-			Dtype x = input_data[2*index];
-			Dtype y = input_data[2*index + 1];
+			Dtype x = input_data[2*index + 1];
+			Dtype y = input_data[2*index];
 			Dtype eps = 1e-8;
 			Dtype deno = x*x + y*y + eps;
-			input_diff[2*index] = -y/deno * output_diff[index];
-			input_diff[2*index+1] = x/deno * output_diff[index];
+			input_diff[2*index] = x/deno * output_diff[index];
+			input_diff[2*index+1] = -y/deno * output_diff[index];
 		}
 	}
 

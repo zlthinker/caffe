@@ -416,7 +416,13 @@ message LayerParameter {
   // for spatial transformation
   optional SpatialTransformerParameter st_param = 151;
   // added by zixin - 29/09/2016
-  optional DataOutputParameter data_output_param = 233;
+  optional DataOutputParameter data_output_param = 152;
+  // added by zixin - 19/12/2016
+  optional ROIPoolingParameter roi_pooling_param = 153;
+  // added by zixin - 20/12/2016
+  optional RndGeneratorParameter rnd_generator_param = 154;
+  // added by zixin - 21/12/2016
+  optional AngleConvertParameter angle_convert_param = 155;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1484,4 +1490,25 @@ message DataOutputParameter
   }
   optional FileType type = 2 [default = TEXT];
 }
-
+// added by zixin - 19/12/2016
+message ROIPoolingParameter {
+  // Pad, kernel size, and stride are all given as a single value for equal
+  // dimensions in height and width or as Y, X pairs.
+  optional uint32 pooled_h = 1 [default = 0]; // The pooled output height
+  optional uint32 pooled_w = 2 [default = 0]; // The pooled output width
+  // Multiplicative spatial scale factor to translate ROI coords from their
+  // input scale to the scale used when pooling
+  optional float spatial_scale = 3 [default = 1];
+}
+// added by zixin - 20/12/2016
+message RndGeneratorParameter {
+  optional uint32 batch_size = 1 [default = 0];
+  optional uint32 dim = 2 [default = 0];
+  optional uint32 range = 3 [default = 0];
+  optional float shift = 4 [default = 0];
+  optional float scale = 5 [default = 1];
+}
+// added by zixin - 21/12/2016
+message AngleConvertParameter {
+  optional float scale = 1 [default = 1];
+}

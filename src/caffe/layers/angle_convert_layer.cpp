@@ -17,6 +17,7 @@ namespace caffe {
 template <typename Dtype>
 	void AngleConvertLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 			const vector<Blob<Dtype>*>& top) {
+		scale_ = this->layer_param_.angle_convert_param().scale();
 	}
 
 template <typename Dtype>
@@ -42,19 +43,19 @@ template <typename Dtype>
 			Dtype m_sin = sin(input[batchID]);
 			switch(offset) {
 				case 0:
-					output[index] = m_cos;
+					output[index] = scale_ * m_cos;
 					break;
 				case 1:
-					output[index] = m_sin;
+					output[index] = -scale_ * m_sin;
 					break;
 				case 2:
 					output[index] = 0;
 					break;
 				case 3:
-					output[index] = -m_sin;
+					output[index] = scale_ * m_sin;
 					break;
 				case 4:
-					output[index] = m_cos;
+					output[index] = scale_ * m_cos;
 					break;
 				case 5:
 					output[index] = 0;
@@ -76,10 +77,10 @@ template <typename Dtype>
 		for(int index = 0; index < bottom[0]->count(); index++) {
 			Dtype m_cos = output_data[index*6 + 0];
 			Dtype m_sin = output_data[index*6 + 1];
-			input_diff[index] = -m_sin * output_diff[index*6 + 0]
-				+ m_cos * output_diff[index*6 + 1]
-				- m_cos * output_diff[index*6 + 3]
-				- m_sin * output_diff[index*6 + 4];
+			input_diff[index] = -scale_ * m_sin * output_diff[index*6 + 0]
+				- scale_ * m_cos * output_diff[index*6 + 1]
+				+ scale_ * m_cos * output_diff[index*6 + 3]
+				- scale_ * m_sin * output_diff[index*6 + 4];
 		}
 	}
 

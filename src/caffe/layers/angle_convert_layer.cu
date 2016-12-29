@@ -10,7 +10,7 @@ namespace caffe {
 
 template <typename Dtype>
 	__global__ void AngleConvertForwardGPU(const int nthreads,
-			const Dtype* input, Dtype* output) {
+			const Dtype* input, Dtype* output, const Dtype scale_) {
 
 		CUDA_KERNEL_LOOP(index, nthreads) {
 			const int offset = index % 6;
@@ -19,19 +19,19 @@ template <typename Dtype>
 			Dtype m_sin = sin(input[batchID]);
 			switch(offset) {
 				case 0:
-					output[index] = m_cos;
+					output[index] = scale_ * m_cos;
 					break;
 				case 1:
-					output[index] = m_sin;
+					output[index] = -scale_ * m_sin;
 					break;
 				case 2:
 					output[index] = 0;
 					break;
 				case 3:
-					output[index] = -m_sin;
+					output[index] = scale_ * m_sin;
 					break;
 				case 4:
-					output[index] = m_cos;
+					output[index] = scale_ * m_cos;
 					break;
 				case 5:
 					output[index] = 0;
@@ -50,21 +50,21 @@ template <typename Dtype>
 
 		const int nthreads = top[0]->count();
 		AngleConvertForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads), CAFFE_CUDA_NUM_THREADS>>>(
-				nthreads, input, output);
+				nthreads, input, output, scale_);
 		CUDA_POST_KERNEL_CHECK;
 	}
 
 template <typename Dtype>
 	__global__ void AngleConvertBackwardGPU(const int nthreads, const Dtype* output_data,
-			const Dtype* output_diff, Dtype* input_diff) {
+			const Dtype* output_diff, Dtype* input_diff, const Dtype scale_) {
 
 		CUDA_KERNEL_LOOP(index, nthreads) {
 			Dtype m_cos = output_data[index*6 + 0];
 			Dtype m_sin = output_data[index*6 + 1];
-			input_diff[index] = -m_sin * output_diff[index*6 + 0]
-				+ m_cos * output_diff[index*6 + 1]
-				- m_cos * output_diff[index*6 + 3]
-				- m_sin * output_diff[index*6 + 4];
+			input_diff[index] = -scale_ * m_sin * output_diff[index*6 + 0]
+				- scale_ * m_cos * output_diff[index*6 + 1]
+				+ scale_ * m_cos * output_diff[index*6 + 3]
+				- scale_ * m_sin * output_diff[index*6 + 4];
 		}
 	}
 
@@ -80,7 +80,7 @@ template <typename Dtype>
 
 		const int nthreads = bottom[0]->count();
 		AngleConvertBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads), CAFFE_CUDA_NUM_THREADS>>>(
-				nthreads, output_data, output_diff, input_diff);
+				nthreads, output_data, output_diff, input_diff, scale_);
 		CUDA_POST_KERNEL_CHECK;
 	}
 
