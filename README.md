@@ -1,4 +1,20 @@
+# NOTE
+when compiled in Centos, use cmake -DBLAS=open .., then make.
+
 # Caffe
+
+## Specific git usage for working with caffe
+This is upstream repository for caffe. To work on this project, you need to first fork it to your own repository and then submit pull requests. Since we try to synchronize with the official caffe branch, you can optionally add a `github` remote and make it track `https://github.com/BVLC/caffe`:
+
+    git checkout -b github-master
+    git remote add github https://github.com/BVLC/caffe
+    git pull github master
+    git branch --set-upstream-to=github/master github-master
+
+Then you can change back to `master` branch and merge github official branch:
+
+    git checkout master
+    git merge github-master
 
 [![Build Status](https://travis-ci.org/BVLC/caffe.svg?branch=master)](https://travis-ci.org/BVLC/caffe)
 [![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)

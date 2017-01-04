@@ -403,6 +403,26 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  // ----------------------------------------------------------------------------------
+  // plz add your own param below with same annotation format.
+  // ----------------------------------------------------------------------------------
+  // added by zixin - 06/09/2016
+  // for loss layer marked with 'mining', aiming to enhance training efficiency.
+  optional MiningParameter mining_param = 149;
+  // added by zixin - 14/09/2016
+  // for matrix-matrix multiplication
+  optional DotProductParameter dot_product_param = 150;
+  // added by zixin - 20/09/2016
+  // for spatial transformation
+  optional SpatialTransformerParameter st_param = 151;
+  // added by zixin - 29/09/2016
+  optional DataOutputParameter data_output_param = 152;
+  // added by zixin - 19/12/2016
+  optional ROIPoolingParameter roi_pooling_param = 153;
+  // added by zixin - 20/12/2016
+  optional RndGeneratorParameter rnd_generator_param = 154;
+  // added by zixin - 21/12/2016
+  optional AngleConvertParameter angle_convert_param = 155;
 }
 
 // Message that stores parameters used to apply transformation
@@ -426,6 +446,24 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
+  // Below options are valid only when with openCV support
+  // Normalization, note this is the last step in augumentation process
+  // even you have mean substraction.
+  optional bool normalize = 8 [default = false];
+  // Zoom in/out augumentation.
+  optional bool zoom = 9 [default = false];
+  optional uint32 zoom_scale = 10;
+  // Rotate augumentation.
+  optional bool rotate = 11 [default = false];
+  optional uint32 rotate_deg = 12;
+  // Translation augumentation.
+  optional bool translate = 14 [default = false];
+  optional uint32 trans_x = 15;
+  optional uint32 trans_y = 16;
+  // If you don't want randomly crop but only center crop.
+  optional bool fix_crop = 17 [default = false];
+  // If you want apply different augmentation on each channel.
+  optional bool aug_each_channel = 18 [default = false];
 }
 
 // Message that stores parameters shared by loss layers
@@ -1398,4 +1436,79 @@ message PReLUParameter {
   optional FillerParameter filler = 1;
   // Whether or not slope parameters are shared across channels.
   optional bool channel_shared = 2 [default = false];
+}
+
+// ----------------------------------------------------------------------------------
+// define your own param below, always remember to give good annotation.
+// ----------------------------------------------------------------------------------
+
+// added by zixin - 06/09/2016
+message MiningParameter {
+  // forward K1 samples, but use only K2 samples with highest training loss for back-propagation
+  // the mining_ratio r = K1 / K2
+  optional float mining_ratio = 1;
+}
+// added by zixin - 14/09/2016
+message DotProductParameter {
+  enum Mode {
+    VV=0;
+    VM=1;
+    MV=2;
+    MM=3;
+  }
+  optional Mode mode = 1 [default = VV];
+}
+// added by zixin - 20/09/2016
+message SpatialTransformerParameter {
+  // How to use the parameter passed by localisation network
+  optional string transform_type = 1 [default = "affine"];
+  // What is the sampling technique
+  optional string sampler_type = 2 [default = "bilinear"];
+
+  // If not set,stay same with the input dimension H and W
+  optional int32 output_H = 3;
+  optional int32 output_W = 4;
+
+  // If false, only compute dTheta, DO NOT compute dU
+  optional bool to_compute_dU = 5 [default = true];
+
+  // The default value for some parameters
+  optional double theta_1_1 = 6;
+  optional double theta_1_2 = 7;
+  optional double theta_1_3 = 8;
+  optional double theta_2_1 = 9;
+  optional double theta_2_2 = 10;
+  optional double theta_2_3 = 11;
+}
+// added by zixin - 29/09/2016
+message DataOutputParameter
+{
+  repeated string file_name = 1;
+  enum FileType {
+    TEXT = 0;
+    BINARY = 1;
+  }
+  optional FileType type = 2 [default = TEXT];
+}
+// added by zixin - 19/12/2016
+message ROIPoolingParameter {
+  // Pad, kernel size, and stride are all given as a single value for equal
+  // dimensions in height and width or as Y, X pairs.
+  optional uint32 pooled_h = 1 [default = 0]; // The pooled output height
+  optional uint32 pooled_w = 2 [default = 0]; // The pooled output width
+  // Multiplicative spatial scale factor to translate ROI coords from their
+  // input scale to the scale used when pooling
+  optional float spatial_scale = 3 [default = 1];
+}
+// added by zixin - 20/12/2016
+message RndGeneratorParameter {
+  optional uint32 batch_size = 1 [default = 0];
+  optional uint32 dim = 2 [default = 0];
+  optional uint32 range = 3 [default = 0];
+  optional float shift = 4 [default = 0];
+  optional float scale = 5 [default = 1];
+}
+// added by zixin - 21/12/2016
+message AngleConvertParameter {
+  optional float scale = 1 [default = 1];
 }

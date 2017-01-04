@@ -1,15 +1,18 @@
 #include <algorithm>
 #include <vector>
 
-#include "caffe/layers/contrastive_loss_layer.hpp"
+#include "caffe/layers/contrastive_loss_mining_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
 
 template <typename Dtype>
-void ContrastiveLossLayer<Dtype>::LayerSetUp(
+void ContrastiveLossMiningLayer<Dtype>::LayerSetUp(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   LossLayer<Dtype>::LayerSetUp(bottom, top);
+
+  mining_ratio_ = this->layer_param_.mining_param().mining_ratio();
+
   CHECK_EQ(bottom[0]->channels(), bottom[1]->channels());
   CHECK_EQ(bottom[0]->height(), 1);
   CHECK_EQ(bottom[0]->width(), 1);
@@ -28,7 +31,7 @@ void ContrastiveLossLayer<Dtype>::LayerSetUp(
 }
 
 template <typename Dtype>
-void ContrastiveLossLayer<Dtype>::Forward_cpu(
+void ContrastiveLossMiningLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   int count = bottom[0]->count();
@@ -42,28 +45,41 @@ void ContrastiveLossLayer<Dtype>::Forward_cpu(
   bool legacy_version =
       this->layer_param_.contrastive_loss_param().legacy_version();
   Dtype loss(0.0);
+
+  vector<Dtype> loss_vec_pos;
+  vector<Dtype> loss_vec_neg;
+
   for (int i = 0; i < bottom[0]->num(); ++i) {
     dist_sq_.mutable_cpu_data()[i] = caffe_cpu_dot(channels,
         diff_.cpu_data() + (i*channels), diff_.cpu_data() + (i*channels));
     if (static_cast<int>(bottom[2]->cpu_data()[i])) {  // similar pairs
-      loss += dist_sq_.cpu_data()[i];
+      loss_vec_pos.push_back(dist_sq_.cpu_data()[i]);
     } else {  // dissimilar pairs
       if (legacy_version) {
-        loss += std::max(margin - dist_sq_.cpu_data()[i], Dtype(0.0));
+        loss_vec_neg.push_back(std::max(margin - dist_sq_.cpu_data()[i], Dtype(0.0)));
       } else {
         Dtype dist = std::max<Dtype>(margin - sqrt(dist_sq_.cpu_data()[i]),
           Dtype(0.0));
-        loss += dist*dist;
+        loss_vec_neg.push_back(dist*dist);
       }
     }
   }
-  LOG(INFO) << bottom[0]->num();
-  loss = loss / static_cast<Dtype>(bottom[0]->num()) / Dtype(2);
+  sort (loss_vec_pos.begin(), loss_vec_pos.end());
+  sort (loss_vec_neg.begin(), loss_vec_neg.end());
+  const int start_idx_pos = floor(loss_vec_pos.size() * (1.0 - 1.0 / mining_ratio_ ));
+  const int start_idx_neg = floor(loss_vec_neg.size() * (1.0 - 1.0 / mining_ratio_ ));
+  for (int i = start_idx_pos; i < loss_vec_pos.size(); i++) {
+    loss += loss_vec_pos[i];
+  }
+  for (int i = start_idx_neg; i < loss_vec_neg.size(); i++) {
+    loss += loss_vec_neg[i];
+  }
+  loss = loss / (static_cast<Dtype>(bottom[0]->num()) - start_idx_pos - start_idx_neg)/ Dtype(2);
   top[0]->mutable_cpu_data()[0] = loss;
 }
 
 template <typename Dtype>
-void ContrastiveLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void ContrastiveLossMiningLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   Dtype margin = this->layer_param_.contrastive_loss_param().margin();
   bool legacy_version =
@@ -112,10 +128,10 @@ void ContrastiveLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 }
 
 #ifdef CPU_ONLY
-STUB_GPU(ContrastiveLossLayer);
+STUB_GPU(ContrastiveLossMiningLayer);
 #endif
 
-INSTANTIATE_CLASS(ContrastiveLossLayer);
-REGISTER_LAYER_CLASS(ContrastiveLoss);
+INSTANTIATE_CLASS(ContrastiveLossMiningLayer);
+REGISTER_LAYER_CLASS(ContrastiveLossMining);
 
 }  // namespace caffe
