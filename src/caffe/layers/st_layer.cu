@@ -290,17 +290,17 @@ void SpatialTransformerLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& to
 		if(!is_pre_defined_theta[i]) {
 			copy_values<Dtype><<<CAFFE_GET_BLOCKS(num_threads), CAFFE_CUDA_NUM_THREADS>>>(num_threads, 
 				6, i, dFull_theta, 6 - pre_defined_count, k, dTheta);
-			/*std::cout << "Copying " << i << "/6 of dFull_theta to " << k << "/" << */
-				/*6 - pre_defined_count << " of dTheta" << std::endl;*/
+			//std::cout << "Copying " << i << "/6 of dFull_theta to " << k << "/" << 
+			//	6 - pre_defined_count << " of dTheta" << std::endl;
 			++ k;
 		}
 	}
 	
-	/*const Dtype* db_dtheta = bottom[1]->cpu_diff();*/
-	/*for(int i=0; i<bottom[1]->count(); ++i) {*/
-		/*std::cout << db_dtheta[i] << " ";*/
-	/*}*/
-	/*std::cout<<std::endl;*/
+	/*const Dtype* db_dtheta = bottom[1]->cpu_diff();
+	for(int i=0; i<bottom[1]->count(); ++i) {
+		std::cout << db_dtheta[i] << " ";
+	}
+	std::cout<<std::endl;*/
 			
 	if(to_compute_dU_) {
 		Dtype* dU = bottom[0]->mutable_gpu_diff();
