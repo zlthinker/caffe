@@ -423,6 +423,10 @@ message LayerParameter {
   optional RndGeneratorParameter rnd_generator_param = 154;
   // added by zixin - 21/12/2016
   optional AngleConvertParameter angle_convert_param = 155;
+  // added by zixin - 04/01/2017
+  optional StLossParameter st_loss_param = 156;
+  // added by zixin - 04/01/2017
+  optional LocLossParameter loc_loss_param = 157;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1511,4 +1515,14 @@ message RndGeneratorParameter {
 // added by zixin - 21/12/2016
 message AngleConvertParameter {
   optional float scale = 1 [default = 1];
+}
+// added by zixin - 04/01/206
+message StLossParameter {
+// Indicate the resolution of the output images after ST transformation
+  required int32 output_H = 1;
+  required int32 output_W = 2;
+}
+// added by zixin - 04/01/206
+message LocLossParameter {
+  required double threshold = 1;
 }
