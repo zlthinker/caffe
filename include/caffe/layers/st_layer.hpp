@@ -20,8 +20,8 @@ class SpatialTransformerLayer : public Layer<Dtype> {
 public:
 	explicit SpatialTransformerLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {
-	      to_compute_dU_ = false; 
-	      global_debug = false; 
+	      to_compute_dU_ = false;
+	      global_debug = false;
 	      pre_defined_count = 0;
       }
 	virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
@@ -30,7 +30,8 @@ public:
       const vector<Blob<Dtype>*>& top);
 
 	virtual inline const char* type() const { return "SpatialTransformer"; }
-	virtual inline int ExactNumBottomBlobs() const { return 2; }
+	virtual inline int MinBottomBlobs() const { return 1; }
+	virtual inline int MaxBottomBlobs() const { return 2; }
 	virtual inline int ExactNumTopBlobs() const { return 1; }
 
 protected:

@@ -429,6 +429,8 @@ message LayerParameter {
   optional LocLossParameter loc_loss_param = 157;
   // added by zixin - 13/01/2017
   optional MultiLabelImageDataParameter multi_label_image_data_param = 158;
+  // added by zixin - 15/01/2017
+  optional TransposeParameter transpose_param = 159;
 }
 
 // Message that stores parameters used to apply transformation
@@ -1561,4 +1563,7 @@ message MultiLabelImageDataParameter {
   // Specify the label number.
   optional uint32 label_num = 13 [default = 1];
 }
-
+// added by zixin - 15/01/2017
+message TransposeParameter {
+  repeated uint32 dim = 1;
+}
