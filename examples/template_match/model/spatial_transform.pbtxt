@@ -1,0 +1,14 @@
+
+
+layer {
+  name: "st_2"
+  type: "SpatialTransformer"
+  bottom: "data"
+  bottom: "st/theta_2"
+  top: "inc2/data"
+  st_param {
+    to_compute_dU: false
+    output_H: 224
+    output_W: 224
+  }
+}

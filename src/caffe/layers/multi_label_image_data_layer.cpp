@@ -49,7 +49,6 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
         << label_num << " (default is 1). Currently found " << strs.size() - 1 << '.';
     for (int i = 0; i < label_num; i++) {
         label[i] = atof(strs[i+1].c_str());
-        LOG(INFO) << label[i];
     }
     lines_.push_back(std::make_pair(strs[0], label));
   }
