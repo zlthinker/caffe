@@ -44,12 +44,12 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
   // multi-label support
   while (std::getline(infile, line)) {
     vector<string> strs;
+    line.erase(line.find_last_not_of(" ") + 1);
     boost::split(strs, line, boost::is_any_of(" "));
     CHECK_EQ(label_num, strs.size() - 1) << "The number of labels that is specified is "
         << label_num << " (default is 1). Currently found " << strs.size() - 1 << '.';
     for (int i = 0; i < label_num; i++) {
         label[i] = atof(strs[i+1].c_str());
-        LOG(INFO) << label[i];
     }
     lines_.push_back(std::make_pair(strs[0], label));
   }
