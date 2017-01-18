@@ -7,7 +7,7 @@ layer {
     top: "data_template"
     top: "center_target"
     multi_label_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/SFZ/template_data.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/SFZ/template_mix_data.txt"
         label_num: 2
 	      new_height: 32
 	      new_width: 32
@@ -25,7 +25,7 @@ layer {
     top: "data_search"
     top: "confidence_label"
     image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/SFZ/search_data.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/SFZ/search_mix_data.txt"
 	      new_height: 256
 	      new_width: 256
         batch_size: 10
@@ -57,6 +57,21 @@ layer {
     pad: 1
     kernel_size: 3
     stride: 1
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "bn1_1"
+  type: "BatchNorm"
+  bottom: "conv1_1"
+  top: "conv1_1"
+  batch_norm_param {
+    use_global_stats: true
   }
 }
 layer {
@@ -94,6 +109,21 @@ layer {
     pad: 1
     kernel_size: 3
     stride: 1
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "bn1_2"
+  type: "BatchNorm"
+  bottom: "conv1_2"
+  top: "conv1_2"
+  batch_norm_param {
+    use_global_stats: true
   }
 }
 layer {
@@ -131,6 +161,21 @@ layer {
     pad: 1
     kernel_size: 3
     stride: 1
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "bn1_1_p"
+  type: "BatchNorm"
+  bottom: "conv1_1_p"
+  top: "conv1_1_p"
+  batch_norm_param {
+    use_global_stats: true
   }
 }
 layer {
@@ -168,6 +213,21 @@ layer {
     pad: 1
     kernel_size: 3
     stride: 1
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "bn1_2_p"
+  type: "BatchNorm"
+  bottom: "conv1_2_p"
+  top: "conv1_2_p"
+  batch_norm_param {
+    use_global_stats: true
   }
 }
 layer {
@@ -205,6 +265,21 @@ layer {
     pad: 1
     kernel_size: 3
     stride: 1
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "bn1_st1"
+  type: "BatchNorm"
+  bottom: "conv1_st1"
+  top: "conv1_st1"
+  batch_norm_param {
+    use_global_stats: true
   }
 }
 layer {
@@ -234,6 +309,15 @@ layer {
   }
 }
 layer {
+  name: "bn2_st1"
+  type: "BatchNorm"
+  bottom: "fc1_st1"
+  top: "fc1_st1"
+  batch_norm_param {
+    use_global_stats: true
+  }
+}
+layer {
   name: "relu2_st1"
   type: "ReLU"
   bottom: "fc1_st1"
@@ -257,7 +341,6 @@ layer {
     num_output: 2
   }
 }
-
 layer {
     name: "trans_st1"
     type: "SpatialTransformer"
@@ -295,6 +378,15 @@ layer {
   }
 }
 layer {
+  name: "bn1"
+  type: "BatchNorm"
+  bottom: "fc1"
+  top: "fc1"
+  batch_norm_param {
+    use_global_stats: true
+  }
+}
+layer {
   name: "relu1"
   type: "ReLU"
   bottom: "fc1"
@@ -316,6 +408,15 @@ layer {
   top: "fc2"
   inner_product_param {
     num_output: 256
+  }
+}
+layer {
+  name: "bn2"
+  type: "BatchNorm"
+  bottom: "fc2"
+  top: "fc2"
+  batch_norm_param {
+    use_global_stats: true
   }
 }
 layer {
@@ -382,5 +483,5 @@ layer {
   bottom: "weighted_center"
   bottom: "weighted_target"
   top: "loss_translation"
-  loss_weight: 1
+  loss_weight: 0.0039  # approximately 1/256
 }

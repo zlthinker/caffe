@@ -101,3 +101,7 @@ MANIFEST-*
 examples/images
 repos
 zl
+
+## data files
+examples/template_match/Link to template_match/
+data/template_match

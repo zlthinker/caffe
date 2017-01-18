@@ -1,10 +1,10 @@
 net: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/template_match.prototxt"
 
-# batch_size = 90, iteration = 1100, total 99,000
+# batch_size = 100, iteration = 1100, total 99,000
 test_iter: 1100
 
-# Carry out testing every 500 training iterations.
-test_interval: 1100
+# Carry out testing every 1000 training iterations.
+test_interval: 1000
 test_state: { stage: 'test-on-test' }
 test_initialization: false
 
