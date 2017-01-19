@@ -1,15 +1,14 @@
 net: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/template_match.prototxt"
 
-# batch_size = 100, iteration = 1100, total 99,000
-test_iter: 1100
 
 # Carry out testing every 1000 training iterations.
 test_interval: 1000
+test_iter: 100
 test_state: { stage: 'test-on-test' }
 test_initialization: false
 
 # The base learning rate, momentum and the weight decay of the network.
-base_lr: 0.01
+base_lr: 0.001
 momentum: 0.9
 weight_decay: 0.0005
 
@@ -19,7 +18,7 @@ gamma: 0.1
 stepsize: 10000
 
 # The maximum number of iterations
-max_iter: 10000
+max_iter: 100000
 
 # Display every 100 iterations
 display: 100

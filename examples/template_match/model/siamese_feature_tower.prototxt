@@ -1,44 +1,6 @@
-name: "template_match_layers"
+name: "siamese feature tower"
 
-################## data layers ##################
-layer {
-    name: "template"
-    type: "MultiLabelImageData"
-    top: "data_template"
-    top: "center_target"
-    multi_label_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/SFZ/template_mix_data.txt"
-        label_num: 2
-	      new_height: 64
-	      new_width: 64
-        batch_size: 10
-    }
-    transform_param {
-        mirror: false
-        mean_value:128
-        scale: 0.00625
-    }
-}
-layer {
-    name: "search"
-    type: "ImageData"
-    top: "data_search"
-    top: "confidence_label"
-    image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/SFZ/search_mix_data.txt"
-	      new_height: 256
-	      new_width: 256
-        batch_size: 10
-    }
-    transform_param {
-        mirror: false
-        mean_value: 128
-        scale: 0.00625
-    }
-}
-################## EOF data layers ##################
-
-################## head of tower A ##################
+# ******************head of tower A********************
 layer {
   bottom: "data_search"
   top: "conv0"
@@ -46,11 +8,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv0_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv0_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 24
@@ -90,11 +52,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv1_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv1_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -134,11 +96,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv2_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv2_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -171,7 +133,7 @@ layer {
     pad: 0
   }
 }
-################## spatial transform 1 ##################
+################# spatial transform 1 ##################
 layer {
   bottom: "pool2"
   top: "st1/conv"
@@ -197,21 +159,6 @@ layer {
     type : "constant"
   }
   }
-}
-layer {
-  bottom: "st1/conv"
-  top: "st1/conv/bn"
-  name: "st1/conv/bn"
-  type: "BatchNorm"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layer {
-  bottom: "st1/conv/bn"
-  top: "st1/conv/relu"
-  name: "st1/conv/relu"
-  type: "ReLU"
 }
 layer {
   bottom: "pool2_p"
@@ -240,22 +187,7 @@ layer {
   }
 }
 layer {
-  bottom: "st1/conv_p"
-  top: "st1/conv_p/bn"
-  name: "st1/conv_p/bn"
-  type: "BatchNorm"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layer {
-  bottom: "st1/conv_p/bn"
-  top: "st1/conv_p/relu"
-  name: "st1/conv_p/relu"
-  type: "ReLU"
-}
-layer {
-  bottom: "st1/conv/relu"
+  bottom: "st1/conv"
   top: "st1/reshape"
   name: "st1/reshape"
   type: "Reshape"
@@ -270,7 +202,7 @@ layer {
 }
 layer {
   bottom: "st1/reshape"
-  bottom: "st1/conv_p/relu"
+  bottom: "st1/conv_p"
   top: "st1/concat"
   name: "st1/concat"
   type: "Concat"
@@ -353,7 +285,7 @@ layer {
     output_W: 16
   }
 }
-################## end of spatial transform 1 ##################
+################# end of spatial transform 1 ##################
 layer {
   bottom: "st1/out"
   top: "conv3"
@@ -361,11 +293,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv3_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv3_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -393,11 +325,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv4_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv4_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -430,7 +362,7 @@ layer {
     pad: 0
   }
 }
-################## spatial transform 2 ##################
+################# spatial transform 2 ##################
 layer {
   bottom: "pool4"
   top: "st2/reshape"
@@ -530,12 +462,12 @@ layer {
     output_W: 4
   }
 }
-################## end of spatial transform 2 ##################
+################# end of spatial transform 2 ##################
 
-################## end of tower A ##################
+# ******************end of tower A*********************
 
 
-################## head of tower P ##################
+# ******************head of tower P********************
 layer {
   bottom: "data_template"
   top: "conv0_p"
@@ -543,11 +475,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv0_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv0_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 24
@@ -587,11 +519,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv1_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv1_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -631,11 +563,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv2_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv2_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -675,11 +607,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv3_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv3_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -707,11 +639,11 @@ layer {
   type: "Convolution"
   param {
 	name: "conv4_w"
-	lr_mult : 0
+	lr_mult : 1
   }
   param {
     name: "conv4_b"
-	lr_mult : 0
+	lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -744,140 +676,30 @@ layer {
     pad: 0
   }
 }
-################## end of tower P ##################
+# ******************end of tower P*********************
 
-################## classifier network ##################
-#### reshape & construct input
-layer {
-  bottom: "st2/out"
-  top: "classifier/reshape"
-  name: "classifier/reshape"
-  type: "Reshape"
-  reshape_param {
-    shape {
-      dim: 0
-      dim: -1
-      dim: 1
-      dim: 1
-    }
-  }
-}
-layer {
-  bottom: "pool4_p"
-  top: "classifier/reshape_p"
-  name: "classifier/reshape_p"
-  type: "Reshape"
-  reshape_param {
-    shape {
-      dim: 0
-      dim: -1
-      dim: 1
-      dim: 1
-    }
-  }
-}
-layer {
-  bottom: "classifier/reshape"
-  bottom: "classifier/reshape_p"
-  top: "classifier/concat"
-  name: "classifier/concat"
-  type: "Concat"
-  concat_param {
-    axis: 1
-  }
-}
-#### fc layers
-layers {
-  bottom: "classifier/concat"
-  top: "fc1"
-  name: "fc1"
-  type: INNER_PRODUCT
-  inner_product_param {
-    num_output: 512
-    weight_filler {
-      type: "msra"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0.001
-    }
-  }
-}
-layer {
-  name: "fc1_bn"
-  type: "BatchNorm"
-  bottom: "fc1"
-  top: "fc1"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layers {
-  bottom: "fc1"
-  top: "fc1"
-  name: "fc1_relu"
-  type: RELU
-}
-layers {
-  bottom: "fc1"
-  top: "fc2"
-  name: "fc2"
-  type: INNER_PRODUCT
-  inner_product_param {
-    num_output: 512
-    weight_filler {
-      type: "msra"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0.001
-    }
-  }
-}
-layer {
-  name: "fc2_bn"
-  type: "BatchNorm"
-  bottom: "fc2"
-  top: "fc2"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layers {
-  bottom: "fc2"
-  top: "fc2"
-  name: "fc2_relu"
-  type: RELU
-}
-layers {
-  bottom: "fc2"
-  top: "fc3"
-  name: "fc3"
-  type: INNER_PRODUCT
-  inner_product_param {
-    num_output: 1
-    weight_filler {
-      type: "msra"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0.001
-    }
-  }
-}
-layers {
-  bottom: "fc3"
-  top: "prob"
-  name: "prob"
-  type: SOFTMAX
-}
+input: "data_search"
+input_dim: 10
+input_dim: 1
+input_dim: 256
+input_dim: 256
 
-################## loss ##################
-layer {
-  bottom: "prob"	# input_data
-  bottom: "confidence_label"	# target
-  top: "cross_entropy_loss"
-  name: "cross_entropy_loss"
-  type: "SigmoidCrossEntropyLoss"
-  loss_weight: 1
-}
+input: "data_template"
+input_dim: 10
+input_dim: 1
+input_dim: 64
+input_dim: 64
+
+output: "st2/out"
+output_dim: 10
+output_dim: 64
+output_dim: 4
+output_dim: 4
+# 64x4x4 = 1024
+
+output: "pool4_p"
+output_dim: 10
+output_dim: 64
+output_dim: 4
+output_dim: 4
+# 64x4x4 = 1024

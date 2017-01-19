@@ -483,5 +483,5 @@ layer {
   bottom: "weighted_center"
   bottom: "weighted_target"
   top: "loss_translation"
-  loss_weight: 0.0039  # approximately 1/256
+  loss_weight: 0.00039  # approximately 1/2560
 }

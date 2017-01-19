@@ -1,0 +1,90 @@
+name: "classify_tower"
+layers {
+  bottom: "input"
+  top: "fc1"
+  name: "fc1"
+  type: INNER_PRODUCT
+  inner_product_param {
+    num_output: 512
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.001
+    }
+  }
+}
+layer {
+  name: "fc1_bn"
+  type: "BatchNorm"
+  bottom: "fc1"
+  top: "fc1"
+  batch_norm_param {
+    use_global_stats: true
+  }
+}
+layers {
+  bottom: "fc1"
+  top: "fc1"
+  name: "fc1_relu"
+  type: RELU
+}
+layers {
+  bottom: "fc1"
+  top: "fc2"
+  name: "fc2"
+  type: INNER_PRODUCT
+  inner_product_param {
+    num_output: 512
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.001
+    }
+  }
+}
+layer {
+  name: "fc2_bn"
+  type: "BatchNorm"
+  bottom: "fc2"
+  top: "fc2"
+  batch_norm_param {
+    use_global_stats: true
+  }
+}
+layers {
+  bottom: "fc2"
+  top: "fc2"
+  name: "fc2_relu"
+  type: RELU
+}
+layers {
+  bottom: "fc2"
+  top: "fc3"
+  name: "fc3"
+  type: INNER_PRODUCT
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "msra"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.001
+    }
+  }
+}
+layers {
+  bottom: "fc3"
+  top: "prob"
+  name: "prob"
+  type: SOFTMAX
+}
+input: "input"
+input_dim: 10
+input_dim: 2048
+input_dim: 1
+input_dim: 1
