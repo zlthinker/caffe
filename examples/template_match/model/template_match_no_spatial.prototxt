@@ -229,14 +229,6 @@ layer {
 }
 layer {
   bottom: "pool2"
-  top: "pool2/left"
-  top: "pool2/right"
-  name: "pool2/split"
-  type: "Split"
-
-}
-layer {
-  bottom: "pool2/right"
   top: "conv3"
   name: "conv3"
   type: "Convolution"
@@ -310,14 +302,6 @@ layer {
     stride: 2
     pad: 0
   }
-}
-layer {
-  bottom: "pool4"
-  top: "pool4/left"
-  top: "pool4/right"
-  name: "pool4/split"
-  type: "Split"
-
 }
 ################## end of tower A ##################
 
@@ -456,197 +440,6 @@ layer {
 }
 layer {
   bottom: "pool2_p"
-  top: "pool2_p/left"
-  top: "pool2_p/right"
-  name: "pool2_p/split"
-  type: "Split"
-
-}
-################## spatial transform 1 ##################
-layer {
-  bottom: "pool2/left"
-  top: "st1/conv"
-  name: "st1/conv"
-  type: "Convolution"
-  param {
-  name: "st1/conv_w"
-  lr_mult : 1
-  }
-  param {
-    name: "st1/conv_b"
-  lr_mult : 2
-  }
-  convolution_param {
-    num_output: 16
-    kernel_size: 1
-    stride: 1
-  weight_filler {
-    type : "msra"
-  }
-  bias_filler {
-    type : "constant"
-  }
-  }
-}
-layer {
-  bottom: "st1/conv"
-  top: "st1/conv/bn"
-  name: "st1/conv/bn"
-  type: "BatchNorm"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layer {
-  bottom: "st1/conv/bn"
-  top: "st1/conv/relu"
-  name: "st1/conv/relu"
-  type: "ReLU"
-}
-layer {
-  bottom: "pool2_p/left"
-  top: "st1/conv_p"
-  name: "st1/conv_p"
-  type: "Convolution"
-  param {
-  name: "st1/conv_w"
-  lr_mult : 1
-  }
-  param {
-    name: "st1/conv_b"
-  lr_mult : 2
-  }
-  convolution_param {
-    num_output: 16
-    kernel_size: 1
-    stride: 1
-  weight_filler {
-    type : "msra"
-  }
-  bias_filler {
-    type : "constant"
-  }
-  }
-}
-layer {
-  bottom: "st1/conv_p"
-  top: "st1/conv_p/bn"
-  name: "st1/conv_p/bn"
-  type: "BatchNorm"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layer {
-  bottom: "st1/conv_p/bn"
-  top: "st1/conv_p/relu"
-  name: "st1/conv_p/relu"
-  type: "ReLU"
-}
-layer {
-  bottom: "st1/conv_p/relu"
-  top: "st1/reshape"
-  name: "st1/reshape"
-  type: "Reshape"
-  reshape_param {
-    shape {
-      dim: 0
-      dim: -1
-      dim: 8
-      dim: 8
-    }
-  }
-}
-layer {
-  bottom: "st1/conv/relu"
-  bottom: "st1/reshape"
-  top: "st1/concat"
-  name: "st1/concat"
-  type: "Concat"
-  concat_param {
-    axis: 1
-  }
-}
-layer {
-  name: "st1/ip1"
-  type: "InnerProduct"
-  bottom: "st1/concat"
-  top: "st1/ip1"
-  param {
-    lr_mult: 0.0001
-  }
-  param {
-    lr_mult: 0.0001
-  }
-  inner_product_param {
-    num_output: 128
-    weight_filler {
-      type: "msra"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0.001
-    }
-  }
-}
-layer {
-  bottom: "st1/ip1"
-  top: "st1/ip1/bn"
-  name: "st1/ip1/bn"
-  type: "BatchNorm"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layer {
-  bottom: "st1/ip1/bn"
-  top: "st1/ip1/relu"
-  name: "st1/ip1/relu"
-  type: "ReLU"
-}
-layer {
-  name: "st1/theta"
-  type: "InnerProduct"
-  bottom: "st1/ip1/relu"
-  top: "st1/theta"
-  param {
-    lr_mult: 0.0001
-  }
-  param {
-    lr_mult: 0.0001
-  }
-  inner_product_param {
-    num_output: 2
-    weight_filler {
-      type: "constant"
-      value: 0
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
-}
-layer {
-  name: "st1/transform"
-  type: "SpatialTransformer"
-  bottom: "pool2_p/right"  # input dim: 16x32x32
-  bottom: "st1/theta"
-  top: "st1/out"
-  st_param {
-    # If false, only compute dTheta, DO NOT compute dU
-    to_compute_dU: true  
-    theta_1_1: 0.5
-    theta_1_2: 0.0
-    theta_2_1: 0.0
-    theta_2_2: 0.5
-    output_H: 16  # half size of input 32x32
-    output_W: 16
-  }
-}
-################## end of spatial transform 1 ##################
-layer {
-  bottom: "st1/out"
   top: "conv3_p"
   name: "conv3_p"
   type: "Convolution"
@@ -721,117 +514,6 @@ layer {
     pad: 0
   }
 }
-layer {
-  bottom: "pool4_p"
-  top: "pool4_p/left"
-  top: "pool4_p/right"
-  name: "pool4_p/split"
-  type: "Split"
-
-}
-################## spatial transform 2 ##################
-layer {
-  bottom: "pool4_p/left"
-  top: "st2/reshape"
-  name: "st2/reshape"
-  type: "Reshape"
-  reshape_param {
-    shape {
-      dim: 0
-      dim: -1
-      dim: 4
-      dim: 4
-    }
-  }
-}
-layer {
-  bottom: "pool4/left"
-  bottom: "st2/reshape"
-  top: "st2/concat"
-  name: "st2/concat"
-  type: "Concat"
-  concat_param {
-    axis: 1
-  }
-}
-layer {
-  name: "st2/ip1"
-  type: "InnerProduct"
-  bottom: "st2/concat"
-  top: "st2/ip1"
-  param {
-    lr_mult: 0.0001
-  }
-  param {
-    lr_mult: 0.0001
-  }
-  inner_product_param {
-    num_output: 128
-    weight_filler {
-      type: "msra"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0.001
-    }
-  }
-}
-layer {
-  bottom: "st2/ip1"
-  top: "st2/ip1/bn"
-  name: "st2/ip1/bn"
-  type: "BatchNorm"
-  batch_norm_param {
-    use_global_stats: true
-  }
-}
-layer {
-  bottom: "st2/ip1/bn"
-  top: "st2/ip1/relu"
-  name: "st2/ip1/relu"
-  type: "ReLU"
-}
-layer {
-  name: "st2/theta"
-  type: "InnerProduct"
-  bottom: "st2/ip1/relu"
-  top: "st2/theta"
-  param {
-    lr_mult: 0.0001
-  }
-  param {
-    lr_mult: 0.0001
-  }
-  inner_product_param {
-    num_output: 2
-    weight_filler {
-      type: "constant"
-      value: 0
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
-}
-layer {
-  name: "st2/transform"
-  type: "SpatialTransformer"
-  bottom: "pool4_p/right"  # input dim: 64x8x8
-  bottom: "st2/theta"
-  top: "st2/out"
-  st_param {
-    # If false, only compute dTheta, DO NOT compute dU
-    to_compute_dU: true  
-    theta_1_1: 0.5
-    theta_1_2: 0.0
-    theta_2_1: 0.0
-    theta_2_2: 0.5
-    output_H: 4  # half size of input 64x4x4
-    output_W: 4
-  }
-}
-################## end of spatial transform 2 ##################
 
 ################## end of tower P ##################
 
@@ -841,7 +523,7 @@ layer {
 ################## classifier network ##################
 #### reshape & construct input
 layer {
-  bottom: "pool4/right"
+  bottom: "pool4"
   top: "classifier/reshape"
   name: "classifier/reshape"
   type: "Reshape"
@@ -855,7 +537,7 @@ layer {
   }
 }
 layer {
-  bottom: "st2/out"
+  bottom: "pool4_p"
   top: "classifier/reshape_p"
   name: "classifier/reshape_p"
   type: "Reshape"
@@ -947,7 +629,7 @@ layer {
   name: "fc3"
   type: "InnerProduct"
   inner_product_param {
-    num_output: 1
+    num_output: 2
     weight_filler {
       type: "msra"
     }
@@ -959,11 +641,22 @@ layer {
 }
 
 ################## loss ##################
+#layer {
+#  bottom: "prob"	# input_data
+#  bottom: "confidence_label"	# target
+#  top: "cross_entropy_loss"
+#  name: "cross_entropy_loss"
+#  type: "SigmoidCrossEntropyLoss"
+#  loss_weight: 1
+#}
+
 layer {
-  bottom: "prob"	# input_data
-  bottom: "confidence_label"	# target
-  top: "cross_entropy_loss"
-  name: "cross_entropy_loss"
-  type: "SigmoidCrossEntropyLoss"
-  loss_weight: 1
+  bottom : "prob"
+  bottom : "confidence_label"
+  top: "softmax_loss"
+  type: "SoftmaxWithLoss"
+  loss_weight: 0.00001
+  name : "loss"
+
+
 }
