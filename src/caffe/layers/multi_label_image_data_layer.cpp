@@ -62,7 +62,11 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
     const unsigned int prefetch_rng_seed = caffe_rng_rand();
     prefetch_rng_.reset(new Caffe::RNG(prefetch_rng_seed));
     ShuffleImages();
-  }
+  } else {
+    if (this->phase_ == TRAIN && Caffe::solver_rank() > 0 &&
+        this->layer_param_.image_label_data_param().rand_skip() == 0) {
+      LOG(WARNING) << "Shuffling or skipping recommended for multi-GPU";
+    }
   LOG(INFO) << "A total of " << lines_.size() << " images.";
 
   lines_id_ = 0;
