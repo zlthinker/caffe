@@ -95,7 +95,7 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
       << top[0]->width();
   LOG(INFO) << "input data label size: " << label_num;
   // label
-  vector<int> label_shape(2);
+  vector<int> label_shape(4, 1);
   label_shape[0] = batch_size;
   label_shape[1] = label_num;
   top[1]->Reshape(label_shape);
