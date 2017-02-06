@@ -45,7 +45,7 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
   while (std::getline(infile, line)) {
     vector<string> strs;
     line.erase(line.find_last_not_of(" ") + 1);
-    boost::split(strs, line, boost::is_any_of(" "));
+    boost::split(strs, line, boost::is_any_of("\t "));
     CHECK_EQ(label_num, strs.size() - 1) << "The number of labels that is specified is "
         << label_num << " (default is 1). Currently found " << strs.size() - 1 << '.';
     for (int i = 0; i < label_num; i++) {
@@ -64,9 +64,10 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
     ShuffleImages();
   } else {
     if (this->phase_ == TRAIN && Caffe::solver_rank() > 0 &&
-        this->layer_param_.image_label_data_param().rand_skip() == 0) {
+        this->layer_param_.multi_label_image_data_param().rand_skip() == 0) {
       LOG(WARNING) << "Shuffling or skipping recommended for multi-GPU";
     }
+  }
   LOG(INFO) << "A total of " << lines_.size() << " images.";
 
   lines_id_ = 0;
