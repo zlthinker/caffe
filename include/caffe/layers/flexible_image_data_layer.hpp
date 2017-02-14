@@ -1,5 +1,5 @@
-#ifndef CAFFE_MULTI_LABEL_IMAGE_DATA_LAYER_HPP_
-#define CAFFE_MULTI_LABEL_IMAGE_DATA_LAYER_HPP_
+#ifndef CAFFE_FLEXIBLE_IMAGE_DATA_LAYER_HPP_
+#define CAFFE_FLEXIBLE_IMAGE_DATA_LAYER_HPP_
 
 #include <string>
 #include <utility>
@@ -20,11 +20,11 @@ namespace caffe {
  * TODO(dox): thorough documentation for Forward and proto params.
  */
 template <typename Dtype>
-class MultiLabelImageDataLayer : public BasePrefetchingDataLayer<Dtype> {
+class FlexibleImageDataLayer : public BasePrefetchingDataLayer<Dtype> {
  public:
-  explicit MultiLabelImageDataLayer(const LayerParameter& param)
+  explicit FlexibleImageDataLayer(const LayerParameter& param)
       : BasePrefetchingDataLayer<Dtype>(param) {}
-  virtual ~MultiLabelImageDataLayer();
+  virtual ~FlexibleImageDataLayer();
   virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
@@ -37,11 +37,11 @@ class MultiLabelImageDataLayer : public BasePrefetchingDataLayer<Dtype> {
   virtual void ShuffleImages();
   virtual void load_batch(Batch<Dtype>* batch);
 
-  vector<std::pair<std::string, std::vector<float> > > lines_;
+  vector<std::pair<std::vector<std::string>, std::vector<float> > > lines_;
   int lines_id_;
 };
 
 
 }  // namespace caffe
 
-#endif  // CAFFE_IMAGE_DATA_LAYER_HPP_
+#endif  // CAFFE_FLEXIBLE_IMAGE_DATA_LAYER_HPP_

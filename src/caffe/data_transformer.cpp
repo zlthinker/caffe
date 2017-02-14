@@ -48,12 +48,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   const int datum_width = datum.width();
 
   const int crop_size = param_.crop_size();
-  const Dtype scale = param_.scale();
-  const bool do_mirror = param_.mirror() && Rand(2);
-  const bool has_mean_file = param_.has_mean_file();
-  const bool has_uint8 = data.size() > 0;
-  const bool has_mean_values = mean_values_.size() > 0;
-
+  const Dtype scale = param_.scale(); const bool do_mirror = param_.mirror() && Rand(2); const bool has_mean_file = param_.has_mean_file(); const bool has_uint8 = data.size() > 0; const bool has_mean_values = mean_values_.size() > 0;
   CHECK_GT(datum_channels, 0);
   CHECK_GE(datum_height, crop_size);
   CHECK_GE(datum_width, crop_size);
@@ -261,14 +256,14 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
     //mean = data_mean_.mutable_cpu_data();
   //}
   if (has_mean_values) {
-	  CHECK(mean_values_.size() == 1 || mean_values_.size() == img_channels) <<
-		  "Specify either 1 mean_value or as many as channels: " << img_channels;
-	  if (img_channels > 1 && mean_values_.size() == 1) {
-		  // Replicate the mean_value for simplicity
-		  for (int c = 1; c < img_channels; ++c) {
-			  mean_values_.push_back(mean_values_[0]);
-		  }
-	  }
+      CHECK(mean_values_.size() == 1 || mean_values_.size() == img_channels) <<
+          "Specify either 1 mean_value or as many as channels: " << img_channels;
+      if (img_channels > 1 && mean_values_.size() == 1) {
+          // Replicate the mean_value for simplicity
+          for (int c = 1; c < img_channels; ++c) {
+              mean_values_.push_back(mean_values_[0]);
+          }
+      }
   }
 
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
@@ -277,67 +272,71 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   cv::split(cv_img, &(split_img[0]));
   const bool fix_crop = param_.fix_crop();
   const int affine_matrix_num = param_.aug_each_channel() ? channels : 1;
+  double naive_rotation_pool[3] = {-90.0, 90.0, 180.0};
   cv::Mat output_img;
   vector<cv::Mat> output_img_part(affine_matrix_num);
   // calculate affine matrix
   for(size_t l = 0; l < affine_matrix_num; l++) {
-	  // rotate
-	  cv::Point2f center(img_width/2.0 - 0.5, img_height/2.0 - 0.5);
-	  double rotate_deg = .0;
-	  if (param_.rotate()) {
-		  rotate_deg = (double)param_.rotate_deg() - (double)Rand(param_.rotate_deg() * 2);
-	  }
-	  cv::Mat transform_matrix = cv::getRotationMatrix2D(center, rotate_deg, 1);
-	  // translate
-	  if (param_.translate()) {
-		  int trans_x = param_.trans_x() - Rand(param_.trans_x() * 2);
-		  int trans_y = param_.trans_y() - Rand(param_.trans_y() * 2);
-		  transform_matrix.at<double>(0, 2) += trans_x;
-		  transform_matrix.at<double>(1, 2) += trans_y;
-	  }
-	  // zoom
-	  if (param_.zoom()) {
-		  int tmp = (param_.zoom_scale() - Rand(param_.zoom_scale() * 2));
-		  float zoom_scale = (100.0 + tmp) / 100.0;
-		  for (size_t i = 0; i < 3; i++) {
-		  transform_matrix.at<double>(0, i) *= zoom_scale;
-		  transform_matrix.at<double>(1, i) *= zoom_scale;
-	  }
-	  transform_matrix.at<double>(0, 2) += (1 - zoom_scale) * center.x;
-	  transform_matrix.at<double>(1, 2) += (1 - zoom_scale) * center.y;
-	  }
-	  int h_off = 0;
-	  int w_off = 0;
-	  if (crop_size) {
-		  // We only do random crop when we do training, while fix_crop is set to FLASE.
-		  if (phase_ == TRAIN && fix_crop == false) {
-			  h_off = Rand(img_height - crop_size + 1);
-			  w_off = Rand(img_width - crop_size + 1);
-		  } else {
-			  h_off = (img_height - crop_size) / 2;
-			  w_off = (img_width - crop_size) / 2;
-		  }
-	  }
-	  // if needed, apply crop together with affine to accelerate
-	  transform_matrix.at<double>(0, 2) -= w_off;
-	  transform_matrix.at<double>(1, 2) -= h_off;
-	  // mirror about x axis in cropped image
-	  if (do_mirror) {
-		  transform_matrix.at<double>(0, 0) = -transform_matrix.at<double>(0, 0);
-		  transform_matrix.at<double>(0, 1) = -transform_matrix.at<double>(0, 1);
-		  transform_matrix.at<double>(0, 2) = width - transform_matrix.at<double>(0, 2);
-	  }
-	  if (param_.aug_each_channel()) {
-		  cv::warpAffine(split_img[l], output_img_part[l], transform_matrix, cv::Size(width, height),
-			  cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(127));
-		  CHECK(output_img_part[l].data);
-	  } else {
-		  cv::warpAffine(cv_img, output_img, transform_matrix, cv::Size(width, height),
-			  cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(127));
-	  }
+      // rotate
+      cv::Point2f center(img_width/2.0 - 0.5, img_height/2.0 - 0.5);
+      double rotate_deg = .0;
+      if (param_.rotate()) {
+          rotate_deg = (double)param_.rotate_deg() - (double)Rand(param_.rotate_deg() * 2);
+      }
+      if (param_.naive_rotate()) {
+          rotate_deg = naive_rotation_pool[(int)Rand(3)];
+      }
+      cv::Mat transform_matrix = cv::getRotationMatrix2D(center, rotate_deg, 1);
+      // translate
+      if (param_.translate()) {
+          int trans_x = param_.trans_x() - Rand(param_.trans_x() * 2);
+          int trans_y = param_.trans_y() - Rand(param_.trans_y() * 2);
+          transform_matrix.at<double>(0, 2) += trans_x;
+          transform_matrix.at<double>(1, 2) += trans_y;
+      }
+      // zoom
+      if (param_.zoom()) {
+          int tmp = (param_.zoom_scale() - Rand(param_.zoom_scale() * 2));
+          float zoom_scale = (100.0 + tmp) / 100.0;
+          for (size_t i = 0; i < 3; i++) {
+              transform_matrix.at<double>(0, i) *= zoom_scale;
+              transform_matrix.at<double>(1, i) *= zoom_scale;
+          }
+          transform_matrix.at<double>(0, 2) += (1 - zoom_scale) * center.x;
+          transform_matrix.at<double>(1, 2) += (1 - zoom_scale) * center.y;
+      }
+      int h_off = 0;
+      int w_off = 0;
+      if (crop_size) {
+          // We only do random crop when we do training, while fix_crop is set to FLASE.
+          if (phase_ == TRAIN && fix_crop == false) {
+              h_off = Rand(img_height - crop_size + 1);
+              w_off = Rand(img_width - crop_size + 1);
+          } else {
+              h_off = (img_height - crop_size) / 2;
+              w_off = (img_width - crop_size) / 2;
+          }
+      }
+      // if needed, apply crop together with affine to accelerate
+      transform_matrix.at<double>(0, 2) -= w_off;
+      transform_matrix.at<double>(1, 2) -= h_off;
+      // mirror about x axis in cropped image
+      if (do_mirror) {
+          transform_matrix.at<double>(0, 0) = -transform_matrix.at<double>(0, 0);
+          transform_matrix.at<double>(0, 1) = -transform_matrix.at<double>(0, 1);
+          transform_matrix.at<double>(0, 2) = width - transform_matrix.at<double>(0, 2);
+      }
+      if (param_.aug_each_channel()) {
+          cv::warpAffine(split_img[l], output_img_part[l], transform_matrix, cv::Size(width, height),
+                  cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(127));
+          CHECK(output_img_part[l].data);
+      } else {
+          cv::warpAffine(cv_img, output_img, transform_matrix, cv::Size(width, height),
+                  cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(127));
+      }
   }
   if (param_.aug_each_channel()) {
-	  cv::merge(output_img_part, output_img);
+      cv::merge(output_img_part, output_img);
   }
   CHECK(output_img.data);
   // done! transformation
@@ -347,32 +346,32 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   const bool normalize = param_.normalize();
   // substraction mean value
   if (has_mean_values) {
-	  for (size_t i = 0; i < img_channels; i++) {
-		  split_img[i].convertTo(split_img[i], typeid(Dtype) == typeid(float) ? CV_32F : CV_64F,
-				  scale, -mean_values_[i] * scale);
-	  }
+      for (size_t i = 0; i < img_channels; i++) {
+          split_img[i].convertTo(split_img[i], typeid(Dtype) == typeid(float) ? CV_32F : CV_64F,
+                  scale, -mean_values_[i] * scale);
+      }
   } else {
-	  for (size_t i = 0; i < img_channels; i++) {
-		  split_img[i].convertTo(split_img[i], typeid(Dtype) == typeid(float) ? CV_32F : CV_64F,
-				  scale, .0);
-	  }
+      for (size_t i = 0; i < img_channels; i++) {
+          split_img[i].convertTo(split_img[i], typeid(Dtype) == typeid(float) ? CV_32F : CV_64F,
+                  scale, .0);
+      }
   }
   // normalize
   if (normalize) {
-	  cv::Mat mean_img = cv::Mat::zeros(output_img.channels(), 1, CV_64F);
-	  cv::Mat std_img = cv::Mat::ones(output_img.channels(), 1, CV_64F);
-	  cv::meanStdDev(output_img, mean_img, std_img);
-	  for(size_t i = 0; i < output_img.channels(); i++) {
-		  if (std_img.at<double>(i, 0) < 1E-6) {
-			  std_img.at<double>(i, 0) = 1;
-		  }
-		  split_img[i].convertTo(split_img[i], typeid(Dtype) == typeid(float) ? CV_32F : CV_64F,
-				  1.0/std_img.at<double>(i, 0), -1 * mean_img.at<double>(i, 0) / std_img.at<double>(i, 0));
-	  }
+      cv::Mat mean_img = cv::Mat::zeros(output_img.channels(), 1, CV_64F);
+      cv::Mat std_img = cv::Mat::ones(output_img.channels(), 1, CV_64F);
+      cv::meanStdDev(output_img, mean_img, std_img);
+      for(size_t i = 0; i < output_img.channels(); i++) {
+          if (std_img.at<double>(i, 0) < 1E-6) {
+              std_img.at<double>(i, 0) = 1;
+          }
+          split_img[i].convertTo(split_img[i], typeid(Dtype) == typeid(float) ? CV_32F : CV_64F,
+                  1.0/std_img.at<double>(i, 0), -1 * mean_img.at<double>(i, 0) / std_img.at<double>(i, 0));
+      }
   }
   for (size_t i = 0; i < output_img.channels(); i++) {
-	  caffe_copy(output_img.rows*output_img.cols, (Dtype*)split_img[i].data,
-			  transformed_data+i*output_img.rows*output_img.cols);
+      caffe_copy(output_img.rows*output_img.cols, (Dtype*)split_img[i].data,
+              transformed_data+i*output_img.rows*output_img.cols);
   }
 }
 #endif  // USE_OPENCV

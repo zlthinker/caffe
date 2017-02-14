@@ -9,7 +9,7 @@
 
 #include "caffe/data_transformer.hpp"
 #include "caffe/layers/base_data_layer.hpp"
-#include "caffe/layers/multi_label_image_data_layer.hpp"
+#include "caffe/layers/flexible_image_data_layer.hpp"
 #include "caffe/util/benchmark.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
@@ -19,44 +19,49 @@
 namespace caffe {
 
 template <typename Dtype>
-MultiLabelImageDataLayer<Dtype>::~MultiLabelImageDataLayer<Dtype>() {
+FlexibleImageDataLayer<Dtype>::~FlexibleImageDataLayer<Dtype>() {
   this->StopInternalThread();
 }
 
 template <typename Dtype>
-void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+void FlexibleImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-  const int new_height = this->layer_param_.multi_label_image_data_param().new_height();
-  const int new_width  = this->layer_param_.multi_label_image_data_param().new_width();
-  const bool is_color  = this->layer_param_.multi_label_image_data_param().is_color();
-  const int label_num = this->layer_param_.multi_label_image_data_param().label_num();
-  string root_folder = this->layer_param_.multi_label_image_data_param().root_folder();
+  const int new_height = this->layer_param_.flexible_image_data_param().new_height();
+  const int new_width  = this->layer_param_.flexible_image_data_param().new_width();
+  const bool is_color  = this->layer_param_.flexible_image_data_param().is_color();
+  const int img_num = this->layer_param_.flexible_image_data_param().img_num();
+  const int label_num = this->layer_param_.flexible_image_data_param().label_num();
+  string root_folder = this->layer_param_.flexible_image_data_param().root_folder();
 
   CHECK((new_height == 0 && new_width == 0) ||
       (new_height > 0 && new_width > 0)) << "Current implementation requires "
       "new_height and new_width to be set at the same time.";
   // Read the file with filenames and labels
-  const string& source = this->layer_param_.multi_label_image_data_param().source();
+  const string& source = this->layer_param_.flexible_image_data_param().source();
   LOG(INFO) << "Opening file " << source;
   std::ifstream infile(source.c_str());
   string line;
+  vector<string> image_path(img_num);
   vector<float> label(label_num);
-  // multi-label support
+  // multi-img and multi-label support
   while (std::getline(infile, line)) {
     vector<string> strs;
-    line.erase(line.find_last_not_of(" ") + 1);
+    line.erase(line.find_last_not_of("\t ") + 1);
     boost::split(strs, line, boost::is_any_of("\t "));
-    CHECK_EQ(label_num, strs.size() - 1) << "The number of labels that is specified is "
-        << label_num << " (default is 1). Currently found " << strs.size() - 1 << '.';
-    for (int i = 0; i < label_num; i++) {
-        label[i] = atof(strs[i+1].c_str());
+    CHECK_EQ(img_num + label_num, strs.size()) <<
+        "Plz double check your sample list has the exact image and label number as specified";
+    for (int i = 0; i < img_num; i++) {
+        image_path[i] = strs[i];
     }
-    lines_.push_back(std::make_pair(strs[0], label));
+    for (int i = 0; i < label_num; i++) {
+        label[i] = atof(strs[i + img_num].c_str());
+    }
+    lines_.push_back(std::make_pair(image_path, label));
   }
 
   CHECK(!lines_.empty()) << "File is empty";
 
-  if (this->layer_param_.multi_label_image_data_param().shuffle()) {
+  if (this->layer_param_.flexible_image_data_param().shuffle()) {
     // randomly shuffle data
     LOG(INFO) << "Shuffling data";
     const unsigned int prefetch_rng_seed = caffe_rng_rand();
@@ -64,7 +69,7 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
     ShuffleImages();
   } else {
     if (this->phase_ == TRAIN && Caffe::solver_rank() > 0 &&
-        this->layer_param_.multi_label_image_data_param().rand_skip() == 0) {
+        this->layer_param_.flexible_image_data_param().rand_skip() == 0) {
       LOG(WARNING) << "Shuffling or skipping recommended for multi-GPU";
     }
   }
@@ -72,22 +77,28 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
 
   lines_id_ = 0;
   // Check if we would need to randomly skip a few data points
-  if (this->layer_param_.multi_label_image_data_param().rand_skip()) {
+  if (this->layer_param_.flexible_image_data_param().rand_skip()) {
     unsigned int skip = caffe_rng_rand() %
-        this->layer_param_.multi_label_image_data_param().rand_skip();
+        this->layer_param_.flexible_image_data_param().rand_skip();
     LOG(INFO) << "Skipping first " << skip << " data points.";
     CHECK_GT(lines_.size(), skip) << "Not enough points to skip";
     lines_id_ = skip;
   }
   // Read an image, and use it to initialize the top blob.
-  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-                                    new_height, new_width, is_color);
-  CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
+  vector<cv::Mat> img_stack(img_num);
+  for (int i = 0; i < img_num; i++) {
+      cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[i],
+              new_height, new_width, is_color);
+      CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[i];
+      img_stack[i] = cv_img.clone();
+  }
+  cv::Mat merged_img;
+  cv::merge(img_stack, merged_img);
   // Use data_transformer to infer the expected blob shape from a cv_image.
-  vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
+  vector<int> top_shape = this->data_transformer_->InferBlobShape(merged_img);
   this->transformed_data_.Reshape(top_shape);
   // Reshape prefetch_data and top[0] according to the batch_size.
-  const int batch_size = this->layer_param_.multi_label_image_data_param().batch_size();
+  const int batch_size = this->layer_param_.flexible_image_data_param().batch_size();
   CHECK_GT(batch_size, 0) << "Positive batch size required";
   top_shape[0] = batch_size;
   for (int i = 0; i < this->prefetch_.size(); ++i) {
@@ -110,7 +121,7 @@ void MultiLabelImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>&
 }
 
 template <typename Dtype>
-void MultiLabelImageDataLayer<Dtype>::ShuffleImages() {
+void FlexibleImageDataLayer<Dtype>::ShuffleImages() {
   caffe::rng_t* prefetch_rng =
       static_cast<caffe::rng_t*>(prefetch_rng_->generator());
   shuffle(lines_.begin(), lines_.end(), prefetch_rng);
@@ -118,7 +129,7 @@ void MultiLabelImageDataLayer<Dtype>::ShuffleImages() {
 
 // This function is called on prefetch thread
 template <typename Dtype>
-void MultiLabelImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
+void FlexibleImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   CPUTimer batch_timer;
   batch_timer.Start();
   double read_time = 0;
@@ -126,21 +137,28 @@ void MultiLabelImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   CPUTimer timer;
   CHECK(batch->data_.count());
   CHECK(this->transformed_data_.count());
-  MultiLabelImageDataParameter multi_label_image_data_param = this->layer_param_.multi_label_image_data_param();
-  const int batch_size = multi_label_image_data_param.batch_size();
-  const int new_height = multi_label_image_data_param.new_height();
-  const int new_width = multi_label_image_data_param.new_width();
-  const bool is_color = multi_label_image_data_param.is_color();
-  const int label_num = multi_label_image_data_param.label_num();
-  string root_folder = multi_label_image_data_param.root_folder();
+  FlexibleImageDataParameter flexible_image_data_param = this->layer_param_.flexible_image_data_param();
+  const int batch_size = flexible_image_data_param.batch_size();
+  const int new_height = flexible_image_data_param.new_height();
+  const int new_width = flexible_image_data_param.new_width();
+  const bool is_color = flexible_image_data_param.is_color();
+  const int img_num = flexible_image_data_param.img_num();
+  const int label_num = flexible_image_data_param.label_num();
+  string root_folder = flexible_image_data_param.root_folder();
 
-  // Reshape according to the first image of each batch
+  // Reshape according to the first collection image of each batch
   // on single input batches allows for inputs of varying dimension.
-  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-      new_height, new_width, is_color);
-  CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
-  // Use data_transformer to infer the expected blob shape from a cv_img.
-  vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
+  vector<cv::Mat> img_stack(img_num);
+  for (int i = 0; i < img_num; i++) {
+      cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[i],
+              new_height, new_width, is_color);
+      CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[i];
+      img_stack[i] = cv_img.clone();
+  }
+  cv::Mat merged_img;
+  cv::merge(img_stack, merged_img);
+  // Use data_transformer to infer the expected blob shape from a merged_img.
+  vector<int> top_shape = this->data_transformer_->InferBlobShape(merged_img);
   this->transformed_data_.Reshape(top_shape);
   // Reshape batch according to the batch_size.
   top_shape[0] = batch_size;
@@ -155,15 +173,23 @@ void MultiLabelImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     // get a blob
     timer.Start();
     CHECK_GT(lines_size, lines_id_);
-    cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-        new_height, new_width, is_color);
-    CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
+
+    vector<cv::Mat> img_stack(img_num);
+    for (int img_id = 0; img_id < img_num; img_id++) {
+        cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[img_id],
+                new_height, new_width, is_color);
+        CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[img_id];
+        img_stack[img_id] = cv_img.clone();
+    }
+    cv::Mat merged_img;
+    cv::merge(img_stack, merged_img);
+
     read_time += timer.MicroSeconds();
     timer.Start();
     // Apply transformations (mirror, crop...) to the image
     int offset = batch->data_.offset(item_id);
     this->transformed_data_.set_cpu_data(prefetch_data + offset);
-    this->data_transformer_->Transform(cv_img, &(this->transformed_data_));
+    this->data_transformer_->Transform(merged_img, &(this->transformed_data_));
     trans_time += timer.MicroSeconds();
 
     for (int label_id = 0; label_id < label_num; label_id++) {
@@ -175,7 +201,7 @@ void MultiLabelImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
       // We have reached the end. Restart from the first.
       DLOG(INFO) << "Restarting data prefetching from start.";
       lines_id_ = 0;
-      if (this->layer_param_.multi_label_image_data_param().shuffle()) {
+      if (this->layer_param_.flexible_image_data_param().shuffle()) {
         ShuffleImages();
       }
     }
@@ -186,8 +212,8 @@ void MultiLabelImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   DLOG(INFO) << "Transform time: " << trans_time / 1000 << " ms.";
 }
 
-INSTANTIATE_CLASS(MultiLabelImageDataLayer);
-REGISTER_LAYER_CLASS(MultiLabelImageData);
+INSTANTIATE_CLASS(FlexibleImageDataLayer);
+REGISTER_LAYER_CLASS(FlexibleImageData);
 
 }  // namespace caffe
 #endif  // USE_OPENCV

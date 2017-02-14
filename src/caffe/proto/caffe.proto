@@ -431,9 +431,11 @@ message LayerParameter {
   // added by zixin - 04/01/2017
   optional LocLossParameter loc_loss_param = 157;
   // added by zixin - 13/01/2017
-  optional MultiLabelImageDataParameter multi_label_image_data_param = 158;
+  optional FlexibleImageDataParameter flexible_image_data_param = 158;
   // added by zixin - 15/01/2017
   optional TransposeParameter transpose_param = 159;
+  // added by zixin - 13/02/2017
+  optional TripletLossParameter triplet_loss_param = 160;
 }
 
 // Message that stores parameters used to apply transformation
@@ -475,6 +477,8 @@ message TransformationParameter {
   optional bool fix_crop = 17 [default = false];
   // If you want apply different augmentation on each channel.
   optional bool aug_each_channel = 18 [default = false];
+  // Randomly rotate the image by 90, 180 or -90 degrees
+  optional bool naive_rotate = 19 [default = false];
 }
 
 // Message that stores parameters shared by loss layers
@@ -1457,7 +1461,7 @@ message PReLUParameter {
 message MiningParameter {
   // forward K1 samples, but use only K2 samples with highest training loss for back-propagation
   // the mining_ratio r = K1 / K2
-  optional float mining_ratio = 1;
+  optional float mining_ratio = 1 [default = 1];
 }
 // added by zixin - 14/09/2016
 message DotProductParameter {
@@ -1534,7 +1538,7 @@ message LocLossParameter {
   required double threshold = 1;
 }
 // added by zixin - 13/01/2017
-message MultiLabelImageDataParameter {
+message FlexibleImageDataParameter {
   // Specify the data source.
   optional string source = 1;
   // Specify the batch size.
@@ -1565,8 +1569,19 @@ message MultiLabelImageDataParameter {
   optional string root_folder = 12 [default = ""];
   // Specify the label number.
   optional uint32 label_num = 13 [default = 1];
+  // Specify the image number.
+  optional uint32 img_num = 14 [default = 1];
 }
 // added by zixin - 15/01/2017
 message TransposeParameter {
   repeated uint32 dim = 1;
+}
+// added by zixin - 13/02/2017
+message TripletLossParameter {
+  optional float margin = 1 [default = 0]; // Strictly positive values
+  // ref - Learning local feature descriptors with
+  // triplets and shallow convolutional neural networks
+  //
+  // a very simple trick to do hard negative mining.
+  optional bool intriplet_mining = 2 [default = false];
 }
