@@ -20,6 +20,11 @@ template <typename Dtype>
         top[0]->Reshape(loss_shape);
         batch_size_ = bottom[0]->shape(0);
         vec_dimension_ = bottom[0]->count() / batch_size_;
+        if (top.size() == 2) {
+            vector<int> per_loss_shape(1);
+            per_loss_shape[0] = batch_size_;
+            top[1]->Reshape(per_loss_shape);
+        }
         vec_loss_.resize(batch_size_);
         start_idx = floor(batch_size_ * (1.0 - 1.0 / mining_ratio_ ));
     }
@@ -91,6 +96,9 @@ template <typename Dtype>
 
         loss /= (batch_size_ - start_idx) * Dtype(2);
         top[0]->mutable_cpu_data()[0] = loss;
+        if (top.size() == 2) {
+            caffe_copy(batch_size_, &(vec_loss_[0]), top[1]->mutable_cpu_data());
+        }
     }
 
 template <typename Dtype>

@@ -267,81 +267,67 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   }
 
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
-// *********************
-  vector<cv::Mat> split_img(channels);
-  cv::split(cv_img, &(split_img[0]));
+  // start customized transformation
   const bool fix_crop = param_.fix_crop();
-  const int affine_matrix_num = param_.aug_each_channel() ? channels : 1;
-  double naive_rotation_pool[3] = {-90.0, 90.0, 180.0};
-  cv::Mat output_img;
-  vector<cv::Mat> output_img_part(affine_matrix_num);
+  double naive_rotation_pool[6] = {0.0, 0.0, 0.0, -90.0, 90.0, 180.0};
   // calculate affine matrix
-  for(size_t l = 0; l < affine_matrix_num; l++) {
-      // rotate
-      cv::Point2f center(img_width/2.0 - 0.5, img_height/2.0 - 0.5);
-      double rotate_deg = .0;
-      if (param_.rotate()) {
-          rotate_deg = (double)param_.rotate_deg() - (double)Rand(param_.rotate_deg() * 2);
+  //
+  // rotate
+  cv::Point2f center(img_width/2.0 - 0.5, img_height/2.0 - 0.5);
+  double rotate_deg = .0;
+  if (param_.rotate()) {
+      rotate_deg = (double)param_.rotate_deg() - (double)Rand(param_.rotate_deg() * 2);
+  }
+  if (param_.naive_rotate()) {
+      rotate_deg = naive_rotation_pool[(int)Rand(6)];
+  }
+  cv::Mat transform_matrix = cv::getRotationMatrix2D(center, rotate_deg, 1);
+  // translate
+  if (param_.translate()) {
+      int trans_x = param_.trans_x() - Rand(param_.trans_x() * 2);
+      int trans_y = param_.trans_y() - Rand(param_.trans_y() * 2);
+      transform_matrix.at<double>(0, 2) += trans_x;
+      transform_matrix.at<double>(1, 2) += trans_y;
+  }
+  // zoom
+  if (param_.zoom()) {
+      int tmp = (param_.zoom_scale() - Rand(param_.zoom_scale() * 2));
+      float zoom_scale = (100.0 + tmp) / 100.0;
+      for (size_t i = 0; i < 3; i++) {
+          transform_matrix.at<double>(0, i) *= zoom_scale;
+          transform_matrix.at<double>(1, i) *= zoom_scale;
       }
-      if (param_.naive_rotate()) {
-          rotate_deg = naive_rotation_pool[(int)Rand(3)];
-      }
-      cv::Mat transform_matrix = cv::getRotationMatrix2D(center, rotate_deg, 1);
-      // translate
-      if (param_.translate()) {
-          int trans_x = param_.trans_x() - Rand(param_.trans_x() * 2);
-          int trans_y = param_.trans_y() - Rand(param_.trans_y() * 2);
-          transform_matrix.at<double>(0, 2) += trans_x;
-          transform_matrix.at<double>(1, 2) += trans_y;
-      }
-      // zoom
-      if (param_.zoom()) {
-          int tmp = (param_.zoom_scale() - Rand(param_.zoom_scale() * 2));
-          float zoom_scale = (100.0 + tmp) / 100.0;
-          for (size_t i = 0; i < 3; i++) {
-              transform_matrix.at<double>(0, i) *= zoom_scale;
-              transform_matrix.at<double>(1, i) *= zoom_scale;
-          }
-          transform_matrix.at<double>(0, 2) += (1 - zoom_scale) * center.x;
-          transform_matrix.at<double>(1, 2) += (1 - zoom_scale) * center.y;
-      }
-      int h_off = 0;
-      int w_off = 0;
-      if (crop_size) {
-          // We only do random crop when we do training, while fix_crop is set to FLASE.
-          if (phase_ == TRAIN && fix_crop == false) {
-              h_off = Rand(img_height - crop_size + 1);
-              w_off = Rand(img_width - crop_size + 1);
-          } else {
-              h_off = (img_height - crop_size) / 2;
-              w_off = (img_width - crop_size) / 2;
-          }
-      }
-      // if needed, apply crop together with affine to accelerate
-      transform_matrix.at<double>(0, 2) -= w_off;
-      transform_matrix.at<double>(1, 2) -= h_off;
-      // mirror about x axis in cropped image
-      if (do_mirror) {
-          transform_matrix.at<double>(0, 0) = -transform_matrix.at<double>(0, 0);
-          transform_matrix.at<double>(0, 1) = -transform_matrix.at<double>(0, 1);
-          transform_matrix.at<double>(0, 2) = width - transform_matrix.at<double>(0, 2);
-      }
-      if (param_.aug_each_channel()) {
-          cv::warpAffine(split_img[l], output_img_part[l], transform_matrix, cv::Size(width, height),
-                  cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(127));
-          CHECK(output_img_part[l].data);
+      transform_matrix.at<double>(0, 2) += (1 - zoom_scale) * center.x;
+      transform_matrix.at<double>(1, 2) += (1 - zoom_scale) * center.y;
+  }
+  int h_off = 0;
+  int w_off = 0;
+  if (crop_size) {
+      // We only do random crop when we do training, while fix_crop is set to FLASE.
+      if (phase_ == TRAIN && fix_crop == false) {
+          h_off = Rand(img_height - crop_size + 1);
+          w_off = Rand(img_width - crop_size + 1);
       } else {
-          cv::warpAffine(cv_img, output_img, transform_matrix, cv::Size(width, height),
-                  cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(127));
+          h_off = (img_height - crop_size) / 2;
+          w_off = (img_width - crop_size) / 2;
       }
   }
-  if (param_.aug_each_channel()) {
-      cv::merge(output_img_part, output_img);
+  // if needed, apply crop together with affine to accelerate
+  transform_matrix.at<double>(0, 2) -= w_off;
+  transform_matrix.at<double>(1, 2) -= h_off;
+  // mirror about x axis in cropped image
+  if (do_mirror) {
+      transform_matrix.at<double>(0, 0) = -transform_matrix.at<double>(0, 0);
+      transform_matrix.at<double>(0, 1) = -transform_matrix.at<double>(0, 1);
+      transform_matrix.at<double>(0, 2) = width - transform_matrix.at<double>(0, 2);
   }
+  // apply transformation
+  cv::Mat output_img;
+  cv::warpAffine(cv_img, output_img, transform_matrix, cv::Size(width, height),
+          cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(127));
   CHECK(output_img.data);
-  // done! transformation
-  split_img.clear();
-  split_img.resize(channels);
+  // finish transformation
+  vector<cv::Mat> split_img(channels);
   cv::split(output_img, &(split_img[0]));
   const bool normalize = param_.normalize();
   // substraction mean value
@@ -573,9 +559,10 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(
 template <typename Dtype>
 void DataTransformer<Dtype>::InitRand() {
   const bool needs_rand = param_.mirror() ||
-	  param_.zoom() ||
-	  param_.rotate() ||
-	  param_.translate() ||
+      param_.zoom() ||
+      param_.rotate() ||
+      param_.translate() ||
+      param_.naive_rotate() ||
       (phase_ == TRAIN && param_.crop_size());
   if (needs_rand) {
     const unsigned int rng_seed = caffe_rng_rand();

@@ -24,6 +24,9 @@ class TripletLossLayer : public LossLayer<Dtype> {
   virtual inline int ExactNumBottomBlobs() const { return -1; }
   virtual inline int MinBottomBlobs() const { return 3; }
   virtual inline int MaxBottomBlobs() const { return 4; }
+  virtual inline int ExactNumTopBlobs() const { return -1; }
+  virtual inline int MinTopBlobs() const { return 1; }
+  virtual inline int MaxTopBlobs() const { return 2; }
   inline bool AllowForceBackward(const int bottom_index) const { return true; }
 
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,

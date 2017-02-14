@@ -475,10 +475,8 @@ message TransformationParameter {
   optional uint32 trans_y = 16;
   // If you don't want randomly crop but only center crop.
   optional bool fix_crop = 17 [default = false];
-  // If you want apply different augmentation on each channel.
-  optional bool aug_each_channel = 18 [default = false];
   // Randomly rotate the image by 90, 180 or -90 degrees
-  optional bool naive_rotate = 19 [default = false];
+  optional bool naive_rotate = 18 [default = false];
 }
 
 // Message that stores parameters shared by loss layers

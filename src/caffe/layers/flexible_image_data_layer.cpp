@@ -85,22 +85,18 @@ void FlexibleImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& b
     lines_id_ = skip;
   }
   // Read an image, and use it to initialize the top blob.
-  vector<cv::Mat> img_stack(img_num);
-  for (int i = 0; i < img_num; i++) {
-      cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[i],
-              new_height, new_width, is_color);
-      CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[i];
-      img_stack[i] = cv_img.clone();
-  }
-  cv::Mat merged_img;
-  cv::merge(img_stack, merged_img);
-  // Use data_transformer to infer the expected blob shape from a cv_image.
-  vector<int> top_shape = this->data_transformer_->InferBlobShape(merged_img);
+  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[0],
+          new_height, new_width, is_color);
+  CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[0];
+  // Use data_transformer to infer the expected blob shape from a cv_img.
+  vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
   this->transformed_data_.Reshape(top_shape);
+
   // Reshape prefetch_data and top[0] according to the batch_size.
   const int batch_size = this->layer_param_.flexible_image_data_param().batch_size();
   CHECK_GT(batch_size, 0) << "Positive batch size required";
   top_shape[0] = batch_size;
+  top_shape[1] *= img_num;
   for (int i = 0; i < this->prefetch_.size(); ++i) {
     this->prefetch_[i]->data_.Reshape(top_shape);
   }
@@ -146,22 +142,17 @@ void FlexibleImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   const int label_num = flexible_image_data_param.label_num();
   string root_folder = flexible_image_data_param.root_folder();
 
-  // Reshape according to the first collection image of each batch
+  // Reshape according to the first image of each batch
   // on single input batches allows for inputs of varying dimension.
-  vector<cv::Mat> img_stack(img_num);
-  for (int i = 0; i < img_num; i++) {
-      cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[i],
-              new_height, new_width, is_color);
-      CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[i];
-      img_stack[i] = cv_img.clone();
-  }
-  cv::Mat merged_img;
-  cv::merge(img_stack, merged_img);
-  // Use data_transformer to infer the expected blob shape from a merged_img.
-  vector<int> top_shape = this->data_transformer_->InferBlobShape(merged_img);
+  cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[0],
+          new_height, new_width, is_color);
+  CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[0];
+  // Use data_transformer to infer the expected blob shape from a cv_img.
+  vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
   this->transformed_data_.Reshape(top_shape);
   // Reshape batch according to the batch_size.
   top_shape[0] = batch_size;
+  top_shape[1] *= img_num;
   batch->data_.Reshape(top_shape);
 
   Dtype* prefetch_data = batch->data_.mutable_cpu_data();
@@ -174,23 +165,21 @@ void FlexibleImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     timer.Start();
     CHECK_GT(lines_size, lines_id_);
 
-    vector<cv::Mat> img_stack(img_num);
     for (int img_id = 0; img_id < img_num; img_id++) {
         cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[img_id],
                 new_height, new_width, is_color);
         CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[img_id];
-        img_stack[img_id] = cv_img.clone();
-    }
-    cv::Mat merged_img;
-    cv::merge(img_stack, merged_img);
+        read_time += timer.MicroSeconds();
+        timer.Start();
 
-    read_time += timer.MicroSeconds();
-    timer.Start();
-    // Apply transformations (mirror, crop...) to the image
-    int offset = batch->data_.offset(item_id);
-    this->transformed_data_.set_cpu_data(prefetch_data + offset);
-    this->data_transformer_->Transform(merged_img, &(this->transformed_data_));
-    trans_time += timer.MicroSeconds();
+        // Apply transformations (mirror, crop...) to the image
+        int offset = batch->data_.offset(item_id, cv_img.channels() * img_id);
+        this->transformed_data_.set_cpu_data(prefetch_data + offset);
+        this->data_transformer_->Transform(cv_img, &(this->transformed_data_));
+        trans_time += timer.MicroSeconds();
+        if (img_id != img_num - 1)
+            timer.Start();
+    }
 
     for (int label_id = 0; label_id < label_num; label_id++) {
         prefetch_label[item_id*label_num + label_id] = lines_[lines_id_].second[label_id];
