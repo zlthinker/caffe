@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <omp.h>
 
 #include "caffe/data_transformer.hpp"
 #include "caffe/layers/base_data_layer.hpp"
@@ -140,6 +141,7 @@ void FlexibleImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   const bool is_color = flexible_image_data_param.is_color();
   const int img_num = flexible_image_data_param.img_num();
   const int label_num = flexible_image_data_param.label_num();
+  const int thread_num = flexible_image_data_param.thread_num();
   string root_folder = flexible_image_data_param.root_folder();
 
   // Reshape according to the first image of each batch
@@ -147,6 +149,7 @@ void FlexibleImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[0],
           new_height, new_width, is_color);
   CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first[0];
+  CHECK_LE(thread_num, img_num) << "No need to use redundant threads which cannot improve the efficiency.";
   // Use data_transformer to infer the expected blob shape from a cv_img.
   vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
   this->transformed_data_.Reshape(top_shape);
@@ -165,6 +168,9 @@ void FlexibleImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     timer.Start();
     CHECK_GT(lines_size, lines_id_);
 
+#pragma omp parallel num_threads(thread_num)
+    {
+#pragma omp for
     for (int img_id = 0; img_id < img_num; img_id++) {
         cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first[img_id],
                 new_height, new_width, is_color);
@@ -180,7 +186,7 @@ void FlexibleImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
         if (img_id != img_num - 1)
             timer.Start();
     }
-
+    }
     for (int label_id = 0; label_id < label_num; label_id++) {
         prefetch_label[item_id*label_num + label_id] = lines_[lines_id_].second[label_id];
     }

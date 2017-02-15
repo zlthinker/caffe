@@ -1569,6 +1569,8 @@ message FlexibleImageDataParameter {
   optional uint32 label_num = 13 [default = 1];
   // Specify the image number.
   optional uint32 img_num = 14 [default = 1];
+  // Specify the thread num you want to use to prefetch data. No greater than img_num.
+  optional uint32 thread_num = 15 [default = 1];
 }
 // added by zixin - 15/01/2017
 message TransposeParameter {
