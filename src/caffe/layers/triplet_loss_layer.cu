@@ -56,7 +56,7 @@ template <typename Dtype>
                     // with in-triplet mining, neg diff used for bp should be carefully calculated.
                     caffe_copy(vec_dimension_,
                             diff_pos2neg_.gpu_data() + v * vec_dimension_,
-                            diff_anchor2neg_.mutable_gpu_data() + v * vec_dimension_);
+                            diff_neg_for_bp_.mutable_gpu_data() + v * vec_dimension_);
                     vec_loss_.mutable_cpu_data()[v] -= dis_pos2neg;
                 } else {
                     caffe_copy(vec_dimension_,
