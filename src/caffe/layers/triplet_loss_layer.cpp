@@ -9,12 +9,20 @@ namespace caffe {
 template <typename Dtype>
     void TripletLossLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
             const vector<Blob<Dtype>*>& top) {
+        // bottom[0]: anchor
+        // bottom[1]: positive
+        // bottom[2]: negative
         CHECK(bottom[0]->shape() == bottom[1]->shape())
             << "Inputs must have the same dimension.";
         CHECK(bottom[0]->shape() == bottom[2]->shape())
             << "Inputs must have the same dimension.";
-        diff_same_class_.ReshapeLike(*bottom[0]);
-        diff_diff_class_.ReshapeLike(*bottom[0]);
+
+        diff_anchor2pos_.ReshapeLike(*bottom[0]);
+        diff_anchor2neg_.ReshapeLike(*bottom[0]);
+        diff_pos2neg_.ReshapeLike(*bottom[0]);
+
+        diff_pos_for_bp_.ReshapeLike(*bottom[0]);
+        diff_neg_for_bp_.ReshapeLike(*bottom[0]);
 
         vector<int> loss_shape(0);  // Loss layers output a scalar; 0 axes.
         top[0]->Reshape(loss_shape);
@@ -25,8 +33,7 @@ template <typename Dtype>
             per_loss_shape[0] = batch_size_;
             top[1]->Reshape(per_loss_shape);
         }
-        vec_loss_.resize(batch_size_);
-        start_idx = floor(batch_size_ * (1.0 - 1.0 / mining_ratio_ ));
+        vec_loss_.Reshape(batch_size_, 1, 1, 1);
     }
 
 template <typename Dtype>
@@ -35,69 +42,73 @@ template <typename Dtype>
         LossLayer<Dtype>::LayerSetUp(bottom, top);
         alpha_ = this->layer_param_.triplet_loss_param().margin();
         intriplet_mining_ = this->layer_param_.triplet_loss_param().intriplet_mining();
-        mining_ratio_ = this->layer_param_.mining_param().mining_ratio();
-        if (bottom.size() == 4) {
-            semi_hard_ = true;
-        }
     }
 
 template <typename Dtype>
     void TripletLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             const vector<Blob<Dtype>*>& top) {
         int count = bottom[0]->count();
-        Dtype dis_diff_class = 0;
+        Dtype dis_anchor2pos = 0;
+        Dtype dis_anchor2neg = 0;
+        Dtype dis_pos2neg = 0;
 
-        caffe_sub(count, bottom[0]->cpu_data(), bottom[1]->cpu_data(),
-                diff_same_class_.mutable_cpu_data());
-        caffe_sub(count, bottom[0]->cpu_data(), bottom[2]->cpu_data(),
-                diff_diff_class_.mutable_cpu_data());
-        vector<Dtype> tmp_diff(count);
+        // calc diff for anchor2pos, anchor2neg
+        caffe_sub(count, bottom[0]->cpu_data(),
+                bottom[1]->cpu_data(),
+                diff_anchor2pos_.mutable_cpu_data());
+        caffe_sub(count, bottom[0]->cpu_data(),
+                bottom[2]->cpu_data(),
+                diff_anchor2neg_.mutable_cpu_data());
+        // share pos diff used for bp
+        diff_pos_for_bp_.ShareData(diff_anchor2pos_);
         if (intriplet_mining_) {
-            caffe_sub(count, diff_diff_class_.cpu_data(), diff_same_class_.cpu_data(),
-                    &(tmp_diff[0]));
+            caffe_sub(count, bottom[1]->cpu_data(),
+                    bottom[2]->cpu_data(),
+                    diff_pos2neg_.mutable_cpu_data());
+        } else {
+            // if no in-triplet mining, directly share neg diff used for bp
+            diff_neg_for_bp_.ShareData(diff_anchor2neg_);
         }
 
         Dtype loss = 0;
         for (int v = 0; v < batch_size_; ++v) {
-            dis_diff_class = caffe_cpu_dot(vec_dimension_,
-                    diff_diff_class_.cpu_data() + v * vec_dimension_,
-                    diff_diff_class_.cpu_data() + v * vec_dimension_);
+            // cals anchor2pos dis
+            dis_anchor2pos = caffe_cpu_dot(vec_dimension_,
+                    diff_anchor2pos_.cpu_data() + v * vec_dimension_,
+                    diff_anchor2pos_.cpu_data() + v * vec_dimension_);
+            vec_loss_.mutable_cpu_data()[v] = alpha_ + dis_anchor2pos;
+            // calc anchor2neg dis
+            dis_anchor2neg = caffe_cpu_dot(vec_dimension_,
+                    diff_anchor2neg_.cpu_data() + v * vec_dimension_,
+                    diff_anchor2neg_.cpu_data() + v * vec_dimension_);
             if (intriplet_mining_) {
-                Dtype tmp_dis = caffe_cpu_dot(vec_dimension_,
-                        &(tmp_diff[v * vec_dimension_]),
-                        &(tmp_diff[v * vec_dimension_]));
+                dis_pos2neg = caffe_cpu_dot(vec_dimension_,
+                        diff_pos2neg_.cpu_data() + v * vec_dimension_,
+                        diff_pos2neg_.cpu_data() + v * vec_dimension_);
                 // if dis(p - n) < dis(a - n) is found, assign the harder one as negative.
-                if (tmp_dis < dis_diff_class) {
+                if (dis_pos2neg < dis_anchor2neg) {
+                    // with in-triplet mining, neg diff used for bp should be carefully calculated.
                     caffe_copy(vec_dimension_,
-                            &(tmp_diff[v * vec_dimension_]),
-                            diff_diff_class_.mutable_cpu_data() + v * vec_dimension_);
-                    dis_diff_class = tmp_dis;
+                            diff_pos2neg_.cpu_data() + v * vec_dimension_,
+                            diff_neg_for_bp_.mutable_cpu_data() + v * vec_dimension_);
+                    vec_loss_.mutable_cpu_data()[v] -= dis_pos2neg;
+                } else {
+                    caffe_copy(vec_dimension_,
+                            diff_anchor2neg_.cpu_data() + v * vec_dimension_,
+                            diff_neg_for_bp_.mutable_cpu_data() + v * vec_dimension_);
+                    vec_loss_.mutable_cpu_data()[v] -= dis_anchor2neg;
                 }
-            }
-
-            vec_loss_[v] =
-                caffe_cpu_dot(vec_dimension_,
-                        diff_same_class_.cpu_data() + v * vec_dimension_,
-                        diff_same_class_.cpu_data() + v * vec_dimension_) -
-                dis_diff_class;
-            if (semi_hard_) {
-                if (static_cast<int>(*(bottom[3]->cpu_data() + v)) == 0)
-                    vec_loss_[v] += alpha_;
             } else {
-                vec_loss_[v] += alpha_;
+                vec_loss_.mutable_cpu_data()[v] -= dis_anchor2neg;
             }
-            vec_loss_[v] = std::max(Dtype(0), vec_loss_[v]);
-        }
-        vector<Dtype> tmp_loss = vec_loss_;
-        sort (tmp_loss.begin(), tmp_loss.end());
-        for (int v = start_idx; v < batch_size_; v++) {
-            loss += tmp_loss[v];
+            vec_loss_.mutable_cpu_data()[v] = std::max(Dtype(0), vec_loss_.cpu_data()[v]);
+            loss += vec_loss_.cpu_data()[v];
         }
 
-        loss /= (batch_size_ - start_idx) * Dtype(2);
+        loss /= (batch_size_) * Dtype(2);
         top[0]->mutable_cpu_data()[0] = loss;
         if (top.size() == 2) {
-            caffe_copy(batch_size_, &(vec_loss_[0]), top[1]->mutable_cpu_data());
+            top[1]->ShareData(vec_loss_);
         }
     }
 
@@ -108,18 +119,18 @@ template <typename Dtype>
         const Dtype scale = top[0]->cpu_diff()[0] / bottom[0]->num();
         const int n = bottom[0]->count();
 
-        caffe_sub(n, diff_same_class_.cpu_data(), diff_diff_class_.cpu_data(),
+        caffe_sub(n, diff_pos_for_bp_.cpu_data(), diff_neg_for_bp_.cpu_data(),
                 bottom[0]->mutable_cpu_diff());
         caffe_scal(n, scale, bottom[0]->mutable_cpu_diff());
 
-        caffe_cpu_scale(n, -scale, diff_same_class_.cpu_data(),
+        caffe_cpu_scale(n, -scale, diff_pos_for_bp_.cpu_data(),
                 bottom[1]->mutable_cpu_diff());
 
-        caffe_cpu_scale(n, scale, diff_diff_class_.cpu_data(),
+        caffe_cpu_scale(n, scale, diff_neg_for_bp_.cpu_data(),
                 bottom[2]->mutable_cpu_diff());
 
         for (int v = 0; v < batch_size_; ++v) {
-            if (vec_loss_[v] == 0) {
+            if (vec_loss_.cpu_data()[v] == 0) {
                 caffe_set(vec_dimension_, Dtype(0),
                         bottom[0]->mutable_cpu_diff() + v * vec_dimension_);
                 caffe_set(vec_dimension_, Dtype(0),
@@ -131,7 +142,7 @@ template <typename Dtype>
     }
 
 #ifdef CPU_ONLY
-// STUB_GPU(TripletLossLayer);
+STUB_GPU(TripletLossLayer);
 #endif
 
 INSTANTIATE_CLASS(TripletLossLayer);
