@@ -459,24 +459,8 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
-  // Below options are valid only when with openCV support
-  // Normalization, note this is the last step in augumentation process
-  // even you have mean substraction.
-  optional bool normalize = 8 [default = false];
-  // Zoom in/out augumentation.
-  optional bool zoom = 9 [default = false];
-  optional uint32 zoom_scale = 10;
-  // Rotate augumentation.
-  optional bool rotate = 11 [default = false];
-  optional uint32 rotate_deg = 12;
-  // Translation augumentation.
-  optional bool translate = 14 [default = false];
-  optional uint32 trans_x = 15;
-  optional uint32 trans_y = 16;
   // If you don't want randomly crop but only center crop.
-  optional bool fix_crop = 17 [default = false];
-  // Randomly rotate the image by 90, 180 or -90 degrees
-  optional bool naive_rotate = 18 [default = false];
+  optional bool fix_crop = 8 [default = false];
 }
 
 // Message that stores parameters shared by loss layers
@@ -1515,11 +1499,34 @@ message ROIPoolingParameter {
 }
 // added by zixin - 20/12/2016
 message RndGeneratorParameter {
+  enum RndMethod {
+    NAIVE = 0;
+    HARD_PATCH_MINING = 1;
+    TRANS_AUG = 2;
+  }
+  optional RndMethod rnd_method = 14 [default = NAIVE];
+
   optional uint32 batch_size = 1 [default = 0];
+  // below are params for NAIVE method
   optional uint32 dim = 2 [default = 0];
   optional uint32 range = 3 [default = 0];
   optional float shift = 4 [default = 0];
   optional float scale = 5 [default = 1];
+  // below are params for TRANS_AUG method
+  // Zoom in/out augumentation.
+  optional bool zoom = 6 [default = false];
+  optional uint32 zoom_scale = 7;
+  // Rotate augumentation.
+  optional bool rotate = 8 [default = false];
+  optional uint32 rotate_deg = 9;
+  // Translation augumentation.
+  optional bool translate = 10 [default = false];
+  optional uint32 trans_x = 11;
+  optional uint32 trans_y = 12;
+  // Randomly rotate the image by 0, 90, 180 or -90 degrees
+  optional bool naive_rotate = 13 [default = false];
+  // The base crop scale
+  optional float crop_scale = 15 [default = 1];
 }
 // added by zixin - 21/12/2016
 message AngleConvertParameter {
