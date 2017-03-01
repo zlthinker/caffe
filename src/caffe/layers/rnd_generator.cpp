@@ -79,7 +79,7 @@ template <typename Dtype>
             for (int i = 0; i < batch_size_; i++) {
                 Dtype crop_scale = this->layer_param_.rnd_generator_param().crop_scale();
                 Dtype trans_param[6] = {crop_scale, .0, .0, .0, crop_scale, .0};
-                // note ini this implemention, three transformation components are independent
+                // note in this implemention, three transformation components are independent
                 // rotate
                 if (this->layer_param_.rnd_generator_param().rotate() == true) {
                     Dtype rotate_deg = this->layer_param_.rnd_generator_param().rotate_deg();
