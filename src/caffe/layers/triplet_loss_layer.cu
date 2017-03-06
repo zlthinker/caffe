@@ -12,7 +12,7 @@ template <typename Dtype>
         int count = bottom[0]->count();
         const Dtype* label;
         if (with_label_)
-            label = bottom[3]->gpu_data();
+            label = bottom[3]->cpu_data();
         Dtype dis_anchor2pos;
         Dtype dis_anchor2neg;
         Dtype dis_pos2neg;
