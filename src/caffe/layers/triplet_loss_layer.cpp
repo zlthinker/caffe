@@ -12,6 +12,7 @@ template <typename Dtype>
         // bottom[0]: anchor
         // bottom[1]: positive
         // bottom[2]: negative
+        // bottom[3]: label
         CHECK(bottom[0]->shape() == bottom[1]->shape())
             << "Inputs must have the same dimension.";
         CHECK(bottom[0]->shape() == bottom[2]->shape())
@@ -40,14 +41,22 @@ template <typename Dtype>
     void TripletLossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
             const vector<Blob<Dtype>*>& top) {
         LossLayer<Dtype>::LayerSetUp(bottom, top);
-        alpha_ = this->layer_param_.triplet_loss_param().margin();
-        intriplet_mining_ = this->layer_param_.triplet_loss_param().intriplet_mining();
+        TripletLossParameter param = this->layer_param_.triplet_loss_param();
+        CHECK_GE(param.margin_size(), 1);
+        for (int i = 0; i < param.margin_size(); i++)
+            alpha_.push_back(param.margin(i));
+        intriplet_mining_ = param.intriplet_mining();
+        if (bottom.size() == 4)
+            with_label_ = true;
     }
 
 template <typename Dtype>
     void TripletLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             const vector<Blob<Dtype>*>& top) {
         int count = bottom[0]->count();
+        const Dtype* label;
+        if (with_label_)
+            label = bottom[3]->cpu_data();
         Dtype dis_anchor2pos = 0;
         Dtype dis_anchor2neg = 0;
         Dtype dis_pos2neg = 0;
@@ -76,7 +85,13 @@ template <typename Dtype>
             dis_anchor2pos = caffe_cpu_dot(vec_dimension_,
                     diff_anchor2pos_.cpu_data() + v * vec_dimension_,
                     diff_anchor2pos_.cpu_data() + v * vec_dimension_);
-            vec_loss_.mutable_cpu_data()[v] = alpha_ + dis_anchor2pos;
+            if (with_label_) {
+                const int label_value = static_cast<int>(label[v]);
+                DCHECK_GE(label_value, 0);
+                vec_loss_.mutable_cpu_data()[v] = alpha_[label_value] + dis_anchor2pos;
+            } else {
+                vec_loss_.mutable_cpu_data()[v] = alpha_[0] + dis_anchor2pos;
+            }
             // calc anchor2neg dis
             dis_anchor2neg = caffe_cpu_dot(vec_dimension_,
                     diff_anchor2neg_.cpu_data() + v * vec_dimension_,

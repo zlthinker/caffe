@@ -10,6 +10,9 @@ template <typename Dtype>
     void TripletLossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
             const vector<Blob<Dtype>*>& top) {
         int count = bottom[0]->count();
+        const Dtype* label;
+        if (with_label_)
+            label = bottom[3]->gpu_data();
         Dtype dis_anchor2pos;
         Dtype dis_anchor2neg;
         Dtype dis_pos2neg;
@@ -39,7 +42,13 @@ template <typename Dtype>
                     diff_anchor2pos_.gpu_data() + v * vec_dimension_,
                     diff_anchor2pos_.gpu_data() + v * vec_dimension_,
                     &dis_anchor2pos);
-            vec_loss_.mutable_cpu_data()[v] = alpha_ + dis_anchor2pos;
+            if (with_label_) {
+                const int label_value = static_cast<int>(label[v]);
+                DCHECK_GE(label_value, 0);
+                vec_loss_.mutable_cpu_data()[v] = alpha_[label_value] + dis_anchor2pos;
+            } else {
+                vec_loss_.mutable_cpu_data()[v] = alpha_[0] + dis_anchor2pos;
+            }
             // calc anchor2neg dis
             caffe_gpu_dot(vec_dimension_,
                     diff_anchor2neg_.gpu_data() + v * vec_dimension_,

@@ -1585,7 +1585,7 @@ message TransposeParameter {
 }
 // added by zixin - 13/02/2017
 message TripletLossParameter {
-  optional float margin = 1 [default = 0]; // Strictly positive values
+  repeated float margin = 1; // Strictly positive values
   // ref - Learning local feature descriptors with
   // triplets and shallow convolutional neural networks
   //

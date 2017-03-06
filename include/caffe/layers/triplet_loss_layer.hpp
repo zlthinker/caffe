@@ -21,13 +21,16 @@ class TripletLossLayer : public LossLayer<Dtype> {
       diff_pos2neg_(),
       diff_pos_for_bp_(),
       diff_neg_for_bp_(),
-      vec_loss_() {}
+      vec_loss_(),
+      with_label_(false) {}
 
   void Reshape(const vector<Blob<Dtype>*>& bottom,
                const vector<Blob<Dtype>*>& top);
 
   inline const char* type() const { return "TripletLoss"; }
-  virtual inline int ExactNumBottomBlobs() const { return 3; }
+  virtual inline int ExactNumBottomBlobs() const { return -1; }
+  virtual inline int MinBottomBlobs() const { return 3; }
+  virtual inline int MaxBottomBlobs() const { return 4; }
   virtual inline int ExactNumTopBlobs() const { return -1; }
   virtual inline int MinTopBlobs() const { return 1; }
   virtual inline int MaxTopBlobs() const { return 2; }
@@ -57,7 +60,9 @@ class TripletLossLayer : public LossLayer<Dtype> {
   Blob<Dtype> diff_neg_for_bp_;
 
   Blob<Dtype> vec_loss_;
-  Dtype alpha_;
+
+  vector<Dtype> alpha_;
+  bool with_label_;
   bool intriplet_mining_;
   int batch_size_;
   int vec_dimension_;
