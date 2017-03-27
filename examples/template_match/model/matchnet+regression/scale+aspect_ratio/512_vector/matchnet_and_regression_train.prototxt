@@ -7,7 +7,7 @@ layer {
     top: "data_A"
     top: "size_label"
     multi_label_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/TPT/mix/patch_list_train.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/LSK/mix/patch_list_train.txt"
         label_num: 2
         batch_size: 32
         is_color: false
@@ -32,7 +32,7 @@ layer {
     top: "data_P"
     top: "confidence_label"
     image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/TPT/mix/patch_list_train_p.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/LSK/mix/patch_list_train_p.txt"
         batch_size: 32
         is_color: false
     }
@@ -56,7 +56,7 @@ layer {
     top: "data_A"
     top: "size_label"
     multi_label_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/TPT/mix/patch_list_test.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/LSK/mix/patch_list_test.txt"
         label_num: 2
         batch_size: 32
         is_color: false
@@ -77,7 +77,7 @@ layer {
     top: "data_P"
     top: "confidence_label"
     image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/TPT/mix/patch_list_test_p.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/data/LSK/mix/patch_list_test_p.txt"
 	      new_height: 64
 	      new_width: 64
         batch_size: 32
@@ -681,7 +681,7 @@ layer {
   bottom : "confidence_label"
   top: "softmax_loss"
   type: "SoftmaxWithLoss"
-  loss_weight: 0.1
+  loss_weight: 1
   name : "softmax_loss"
 }
 

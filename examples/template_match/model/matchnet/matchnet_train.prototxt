@@ -3,23 +3,18 @@ name: "matchnet_layers"
 ################## data layers ##################
 layer {
     name: "data_A"
-    type: "ImageData"
+    type: "MultiLabelImageData"
     top: "data_A"
-    top: "confidence_label"
-    image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/zixin/list_new/siamese2_train.txt"
-        batch_size: 48
+    top: "size_label"
+    multi_label_image_data_param {
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/all/patch_pair_scale/mix/patch_list_train.txt"
+        batch_size: 64
         is_color: false
+        label_num: 4
     }
     transform_param {
-      fix_crop: true
-      crop_size: 64
       mean_value: 128
       scale: 0.00625
-      rotate: true
-      rotate_deg: 180
-      zoom: true
-      zoom_scale: 10
     }
     include {
     	phase: TRAIN
@@ -29,21 +24,15 @@ layer {
     name: "data_P"
     type: "ImageData"
     top: "data_P"
-    top: "confidence_label_p"
+    top: "confidence_label"
     image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/zixin/list_new/siamese1_train.txt"
-        batch_size: 48
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/all/patch_pair_scale/mix/patch_list_train_p.txt"
+        batch_size: 64
         is_color: false
     }
     transform_param {
-      fix_crop: true
-      crop_size: 64
       mean_value: 128
       scale: 0.00625
-      rotate: true
-      rotate_deg: 180
-      zoom: true
-      zoom_scale: 10
     }
     include {
     	phase: TRAIN
@@ -51,17 +40,16 @@ layer {
 }
 layer {
     name: "data_A"
-    type: "ImageData"
+    type: "MultiLabelImageData"
     top: "data_A"
-    top: "confidence_label"
-    image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/zixin/list_new/siamese2_test.txt"
-        batch_size: 128
+    top: "size_label"
+    multi_label_image_data_param {
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/all/patch_pair_scale/mix/patch_list_test.txt"
+        batch_size: 32
         is_color: false
+        label_num: 4
     }
     transform_param {
-        fix_crop: true
-        crop_size: 64
         mean_value:128
         scale: 0.00625
     }
@@ -73,17 +61,15 @@ layer {
     name: "data_P"
     type: "ImageData"
     top: "data_P"
-    top: "confidence_label_p"
+    top: "confidence_label"
     image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/zixin/list_new/siamese1_test.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/all/patch_pair_scale/mix/patch_list_test_p.txt"
 	      new_height: 64
 	      new_width: 64
-        batch_size: 128
+        batch_size: 32
         is_color: false
     }
     transform_param {
-        fix_crop: true
-        crop_size: 64
         mean_value: 128
         scale: 0.00625
     }
@@ -92,7 +78,7 @@ layer {
     }
 }
 layer {
-  bottom: "confidence_label_p"
+  bottom: "size_label"
   name: "silence_label"
   type: "Silence"
 }
@@ -106,11 +92,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv0_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv0_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 24
@@ -150,11 +136,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv1_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv1_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -194,11 +180,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv2_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv2_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -226,11 +212,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv3_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv3_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -258,11 +244,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv4_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv4_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -333,6 +319,7 @@ layer {
     value: 0
   }
   }
+#  propagate_down: false
 }
 layer {
   bottom: "conv5"
@@ -350,11 +337,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv0_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv0_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 24
@@ -394,11 +381,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv1_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv1_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -438,11 +425,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv2_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv2_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -470,11 +457,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv3_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv3_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 96
@@ -502,11 +489,11 @@ layer {
   type: "Convolution"
   param {
   name: "conv4_w"
-  lr_mult : 0
+  lr_mult : 1
   }
   param {
     name: "conv4_b"
-  lr_mult : 0
+  lr_mult : 2
   }
   convolution_param {
     num_output: 64
@@ -577,6 +564,7 @@ layer {
     value: 0
   }
   }
+#  propagate_down: false
 }
 layer {
   bottom: "conv5_p"
@@ -679,32 +667,13 @@ layer {
     }
   }
 }
-#layer {
-#  bottom: "classifier/conv2"
-#  top: "output"
-#  type: "Split"
-#}
 
-#layer {
-#  bottom: "classifier/conv2"  # input_data
-#  bottom: "confidence_label"  # target
-#  top: "cross_entropy_loss"
-#  name: "cross_entropy_loss"
-#  type: "SigmoidCrossEntropyLoss"
-#  loss_weight: 0.00000000001
-#}
-
-#layer {
-#  bottom : "classifier/conv2"
-#  top: "output"
-#  type: "Softmax"
-#}
 layer {
   bottom : "classifier/conv2"
   bottom : "confidence_label"
   top: "softmax_loss"
   type: "SoftmaxWithLoss"
-  loss_weight: 0.000000000001
+  loss_weight: 1
   name : "softmax_loss"
 }
 

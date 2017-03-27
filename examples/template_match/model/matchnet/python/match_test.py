@@ -6,11 +6,14 @@ import numpy as np
 
 def readFileList(filepath):
     file_list = []
+    label_list = []
     with open(filepath) as file:
         for line in file:
             path = line.strip().split(' ')[0]
             file_list.append(path)
-    return file_list
+            label = float(line.strip().split(' ')[1])
+            label_list.append(label)
+    return file_list, label_list
 
 def loadImage(image_path, transformer, color):
     img = caffe.io.load_image(image_path, color)
@@ -63,8 +66,8 @@ if __name__ == '__main__':
     net = caffe.Net(args.proto, args.model, caffe.TEST)
     print 'Loaded network: ', args.model
 
-    template_list = readFileList(args.template_list)
-    search_list = readFileList(args.search_list)
+    template_list, label_list = readFileList(args.template_list)
+    search_list, no_use = readFileList(args.search_list)
     if not len(template_list) == len(search_list):
          logging.error('template list and search list have diff size.\n')
     test_num = min(len(template_list), args.test_num)
@@ -90,11 +93,14 @@ if __name__ == '__main__':
         net.blobs['data_P'].data[...] = search_img
         output = net.forward()
         softmax_prob = output['softmax'][0]
-        label = False
+        confidence = 0
         if softmax_prob[0] < softmax_prob[1]:
-            label = True
-            true_num += 1
-        print '[', i, ']', template_filename, ' match ', search_filename, ': ', label
+            confidence = 1
+        result = 0
+        if confidence == label_list[i]:
+            result = 1
+        true_num += result
+        print '[', i, ']', template_filename, ' match ', search_filename, ': ', result
         prob = "{0:.2f}".format(float(softmax_prob[1]))
         template_origin_img = caffe.io.load_image(template_path)
         search_origin_img = caffe.io.load_image(search_path)

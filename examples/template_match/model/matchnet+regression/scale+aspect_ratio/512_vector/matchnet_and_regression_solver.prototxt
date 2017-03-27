@@ -25,7 +25,7 @@ max_iter: 3000000
 display: 100
 
 # snapshot intermediate results
-snapshot: 10000
+snapshot: 50000
 snapshot_prefix: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/matchnet+regression/scale+aspect_ratio/512_vector/snapshot/matchnet_regression"
 
 # solver mode: CPU or GPU

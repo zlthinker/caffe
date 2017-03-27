@@ -40,7 +40,7 @@ def distance(vector1, vector2):
 	return dist
 
 
-def visualizeLocalization(img1, img2, simi_map, regression, save_path, overlap):
+def visualizeLocalization(img1, img2, simi_map, save_path, overlap):
 	height = max(img1.shape[0], img2.shape[0])
 	width = max(img1.shape[1], img2.shape[1])
 	concat = np.zeros((height, width * 2, 3), dtype=np.float32)
@@ -61,18 +61,16 @@ def visualizeLocalization(img1, img2, simi_map, regression, save_path, overlap):
 	for i in range(simi_map.shape[1]):
 		for j in range(simi_map.shape[2]):
 			prob = simi_map[0][i][j]
-			width_scale = regression[0][i][j]
-			height_scale = regression[1][i][j]
-			if prob > 0.6:
+			if prob > 0.8:
 				y = 8 * i
 				x = 8 * j
-				width_new = 64 / width_scale
-				height_new = 64 / height_scale
+				width_patch = 64
+				height_patch = 64
 				# print width_scale, ' ', height_scale
-				left_top_x = x + img2_left_top_x + (64 - width_new) / 2
-				left_top_y = y + img2_left_top_y + (64 - height_new) / 2
-				right_bottom_x = left_top_x + width_new
-				right_bottom_y = left_top_y + height_new
+				left_top_x = x + img2_left_top_x
+				left_top_y = y + img2_left_top_y
+				right_bottom_x = left_top_x + width_patch
+				right_bottom_y = left_top_y + height_patch
 				# print left_top_x, ' ', left_top_y
 				boxes = np.vstack([boxes, [left_top_x, left_top_y, right_bottom_x, right_bottom_y, prob]])
 
@@ -121,7 +119,7 @@ if __name__ == '__main__':
 	parser.set_defaults(cpu_mode=False)
 	parser.add_argument('--test_num', type=int, default=50, help='test pair number')
 	parser.add_argument('--overlap', type=float, default=0.3, help='overlap threshold for nms')
-	parser.add_argument('--shuffle', help='Use cpu mode', action='store_true')
+	parser.add_argument('--shuffle', help='shuffle test data', action='store_true')
 	parser.set_defaults(shuffle=False)
 	args = parser.parse_args()
 
@@ -139,8 +137,8 @@ if __name__ == '__main__':
 	template_list = readFileList(args.template_list)
 	search_list = readFileList(args.search_list)
 	test_num = min(len(template_list), len(search_list), args.test_num)
-	total_test_num = len(template_list)
-
+	total_test_num = min(len(template_list), len(search_list))
+	
 	net.blobs['data_template'].reshape(1, 1, 64, 64)
 	net.blobs['data_search'].reshape(1, 1, 256, 256)
 
@@ -164,10 +162,9 @@ if __name__ == '__main__':
 		net.blobs['data_search'].data[...] = search_img
 		output = net.forward()
 		similarity_map = output['classifier/softmax_B'][0]
-		regression = output['regression/conv2'][0]
 
 		template_origin_img = caffe.io.load_image(template_path)
 		search_origin_img = caffe.io.load_image(search_path)
 		save_path = template_filename + search_filename
 		save_path = os.path.join(args.output_folder, save_path)
-		visualizeLocalization(template_origin_img, search_origin_img, similarity_map, regression, save_path, args.overlap)
+		visualizeLocalization(template_origin_img, search_origin_img, similarity_map, save_path, args.overlap)

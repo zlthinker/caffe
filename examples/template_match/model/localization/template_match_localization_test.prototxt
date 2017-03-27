@@ -236,9 +236,27 @@ layer {
     dropout_ratio: 0.5
   }
 }
+layer {
+  name: "st"
+  type: "SpatialTransformer"
+  bottom: "pool4"
+  bottom: "pool4"
+  top: "st/pool4"
+  st_param {
+    to_compute_dU: false
+    output_H: 8
+    output_W: 8
+    theta_1_1: 0.4
+    theta_1_2: 0
+    theta_2_1: 0
+    theta_2_2: 0.4
+    theta_1_3: 0
+    theta_2_3: 0
+  }
+}
 # fully convolutional layer to generate feature vector
 layer {
-  bottom: "pool4"
+  bottom: "st/pool4"
   top: "conv5"
   name: "conv5"
   type: "Convolution"
@@ -720,7 +738,7 @@ layer {
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   convolution_param {
-    num_output: 2
+    num_output: 4
     pad: 0
     kernel_size: 1
     stride: 1

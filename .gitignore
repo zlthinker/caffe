@@ -109,3 +109,6 @@ data/template_match
 *.jpg
 *.PNG
 *.png
+*patch_list*.txt
+*template_pairs*.txt
+*.txt
