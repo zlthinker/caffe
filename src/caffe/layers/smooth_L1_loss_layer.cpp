@@ -19,6 +19,11 @@ template <typename Dtype>
 void SmoothL1LossLayer<Dtype>::LayerSetUp(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   has_weights_ = (bottom.size() == 3);
+  // reproduce the weights along the channel axis
+  // e.g. given 1, 2, 3, reproduce num = 2,
+  // output 1,1, 2,2, 3,3.
+  reproduce_ = static_cast<int>(this->layer_param_.threshold_param().threshold());
+  CHECK_GE(reproduce_, 1) << "You must set up the label number to reproduce.";
 }
 
 template <typename Dtype>
@@ -29,9 +34,11 @@ void SmoothL1LossLayer<Dtype>::Reshape(
   CHECK_EQ(bottom[0]->height(), bottom[1]->height());
   CHECK_EQ(bottom[0]->width(), bottom[1]->width());
   if (has_weights_) {
-    CHECK_EQ(bottom[0]->channels(), bottom[2]->channels());
+    CHECK_EQ(bottom[2]->channels()*reproduce_, bottom[0]->channels());
     CHECK_EQ(bottom[0]->height(), bottom[2]->height());
     CHECK_EQ(bottom[0]->width(), bottom[2]->width());
+    weights_.Reshape(bottom[2]->channels()*reproduce_, bottom[0]->channels(),
+            bottom[0]->height(), bottom[0]->width());
   }
   diff_.Reshape(bottom[0]->num(), bottom[0]->channels(),
       bottom[0]->height(), bottom[0]->width());

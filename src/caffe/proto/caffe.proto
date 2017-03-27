@@ -98,7 +98,7 @@ message NetParameter {
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
 //
-// SolverParameter next available ID: 41 (last added: type)
+// SolverParameter next available ID: 42 (last added: layer_wise_reduce)
 message SolverParameter {
   //////////////////////////////////////////////////////////////////////////////
   // Specifying the train and test networks
@@ -239,6 +239,9 @@ message SolverParameter {
   }
   // DEPRECATED: use type instead of solver_type
   optional SolverType solver_type = 30 [default = SGD];
+
+  // Overlap compute and communication for data parallel training
+  optional bool layer_wise_reduce = 41 [default = true];
 }
 
 // A message that stores the solver snapshots
@@ -428,7 +431,11 @@ message LayerParameter {
   // added by zixin - 04/01/2017
   optional LocLossParameter loc_loss_param = 157;
   // added by zixin - 13/01/2017
-  optional MultiLabelImageDataParameter multi_label_image_data_param = 158;
+  optional FlexibleImageDataParameter flexible_image_data_param = 158;
+  // added by zixin - 15/01/2017
+  optional TransposeParameter transpose_param = 159;
+  // added by zixin - 13/02/2017
+  optional TripletLossParameter triplet_loss_param = 160;
 }
 
 // Message that stores parameters used to apply transformation
@@ -452,24 +459,8 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
-  // Below options are valid only when with openCV support
-  // Normalization, note this is the last step in augumentation process
-  // even you have mean substraction.
-  optional bool normalize = 8 [default = false];
-  // Zoom in/out augumentation.
-  optional bool zoom = 9 [default = false];
-  optional uint32 zoom_scale = 10;
-  // Rotate augumentation.
-  optional bool rotate = 11 [default = false];
-  optional uint32 rotate_deg = 12;
-  // Translation augumentation.
-  optional bool translate = 14 [default = false];
-  optional uint32 trans_x = 15;
-  optional uint32 trans_y = 16;
   // If you don't want randomly crop but only center crop.
-  optional bool fix_crop = 17 [default = false];
-  // If you want apply different augmentation on each channel.
-  optional bool aug_each_channel = 18 [default = false];
+  optional bool fix_crop = 8 [default = false];
 }
 
 // Message that stores parameters shared by loss layers
@@ -699,8 +690,8 @@ message DataParameter {
   optional bool mirror = 6 [default = false];
   // Force the encoded image to have 3 color channels
   optional bool force_encoded_color = 9 [default = false];
-  // Prefetch queue (Number of batches to prefetch to host memory, increase if
-  // data access bandwidth varies).
+  // Prefetch queue (Increase if data feeding bandwidth varies, within the
+  // limit of device memory for GPU training)
   optional uint32 prefetch = 10 [default = 4];
 }
 
@@ -1460,7 +1451,7 @@ message PReLUParameter {
 message MiningParameter {
   // forward K1 samples, but use only K2 samples with highest training loss for back-propagation
   // the mining_ratio r = K1 / K2
-  optional float mining_ratio = 1;
+  optional float mining_ratio = 1 [default = 1];
 }
 // added by zixin - 14/09/2016
 message DotProductParameter {
@@ -1516,11 +1507,34 @@ message ROIPoolingParameter {
 }
 // added by zixin - 20/12/2016
 message RndGeneratorParameter {
+  enum RndMethod {
+    NAIVE = 0;
+    HARD_PATCH_MINING = 1;
+    TRANS_AUG = 2;
+  }
+  optional RndMethod rnd_method = 14 [default = NAIVE];
+
   optional uint32 batch_size = 1 [default = 0];
+  // below are params for NAIVE method
   optional uint32 dim = 2 [default = 0];
   optional uint32 range = 3 [default = 0];
   optional float shift = 4 [default = 0];
   optional float scale = 5 [default = 1];
+  // below are params for TRANS_AUG method
+  // Zoom in/out augumentation.
+  optional bool zoom = 6 [default = false];
+  optional uint32 zoom_scale = 7;
+  // Rotate augumentation.
+  optional bool rotate = 8 [default = false];
+  optional uint32 rotate_deg = 9;
+  // Translation augumentation.
+  optional bool translate = 10 [default = false];
+  optional uint32 trans_x = 11;
+  optional uint32 trans_y = 12;
+  // Randomly rotate the image by 0, 90, 180 or -90 degrees
+  optional bool naive_rotate = 13 [default = false];
+  // The base crop scale
+  optional float crop_scale = 15 [default = 1];
 }
 // added by zixin - 21/12/2016
 message AngleConvertParameter {
@@ -1537,7 +1551,7 @@ message LocLossParameter {
   required double threshold = 1;
 }
 // added by zixin - 13/01/2017
-message MultiLabelImageDataParameter {
+message FlexibleImageDataParameter {
   // Specify the data source.
   optional string source = 1;
   // Specify the batch size.
@@ -1568,5 +1582,21 @@ message MultiLabelImageDataParameter {
   optional string root_folder = 12 [default = ""];
   // Specify the label number.
   optional uint32 label_num = 13 [default = 1];
+  // Specify the image number.
+  optional uint32 img_num = 14 [default = 1];
+  // Specify the thread num you want to use to prefetch data. No greater than img_num.
+  optional uint32 thread_num = 15 [default = 1];
 }
-
+// added by zixin - 15/01/2017
+message TransposeParameter {
+  repeated uint32 dim = 1;
+}
+// added by zixin - 13/02/2017
+message TripletLossParameter {
+  repeated float margin = 1; // Strictly positive values
+  // ref - Learning local feature descriptors with
+  // triplets and shallow convolutional neural networks
+  //
+  // a very simple trick to do hard negative mining.
+  optional bool intriplet_mining = 2 [default = false];
+}
