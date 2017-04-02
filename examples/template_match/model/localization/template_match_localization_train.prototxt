@@ -2,118 +2,96 @@ name: "template_match_layers"
 
 ################## data layers ##################
 layer {
-    name: "template"
-    type: "MultiLabelImageData"
-    top: "data_template"
-    top: "center_target"
-    multi_label_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/localization/data/template_train_data.txt"
-        label_num: 2
-	      new_height: 64
-	      new_width: 64
-        batch_size: 1
-        is_color: false
-    }
-    transform_param {
-        mirror: false
-        mean_value:128
-        scale: 0.00625
-    }
-    include {
-    	phase: TRAIN
-    }
-}
-layer {
-    name: "search"
+    name: "data_A"
     type: "ImageData"
-    top: "data_search"
-    top: "confidence_label"
+    top: "data_A"
+    top: "label"
     image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/localization/data/search_train_data.txt"
-	      new_height: 256
-	      new_width: 256
-        batch_size: 1
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/oxbuild/patch_search/template_list_train.txt"
+        batch_size: 32
         is_color: false
     }
     transform_param {
-        mirror: false
-        mean_value: 128
-        scale: 0.00625
+      mean_value: 128
+      scale: 0.00625
     }
     include {
-    	phase: TRAIN
+      phase: TRAIN
     }
 }
 layer {
-    name: "template"
-    type: "MultiLabelImageData"
-    top: "data_template"
-    top: "center_target"
-    multi_label_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/localization/test/template_test_data.txt"
-        label_num: 2
-	      new_height: 64
-	      new_width: 64
-        batch_size: 1
-        is_color: false
-    }
-    transform_param {
-        mirror: false
-        mean_value:128
-        scale: 0.00625
-    }
-    include {
-    	phase: TEST
-    }
-}
-layer {
-    name: "search"
+    name: "data_P"
     type: "ImageData"
-    top: "data_search"
-    top: "confidence_label"
+    top: "data_P"
+    top: "label_P"
     image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/template_match/model/localization/test/search_test_data.txt"
-	      new_height: 256
-	      new_width: 256
-        batch_size: 1
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/oxbuild/patch_search/search_list_train.txt"
+        batch_size: 32
         is_color: false
     }
     transform_param {
-        mirror: false
-        mean_value: 128
-        scale: 0.00625
+      mean_value: 128
+      scale: 0.00625
     }
     include {
-    	phase: TEST
+      phase: TRAIN
+    }
+}
+
+layer {
+    name: "data_A"
+    type: "ImageData"
+    top: "data_A"
+    top: "label"
+    image_data_param {
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/oxbuild/patch_search/template_list_test.txt"
+        batch_size: 64
+        is_color: false
+    }
+    transform_param {
+      mean_value: 128
+      scale: 0.00625
+    }
+    include {
+      phase: TEST
     }
 }
 layer {
-  bottom: "center_target"
-  name: "silence_center"
+    name: "data_P"
+    type: "ImageData"
+    top: "data_P"
+    top: "label_P"
+    image_data_param {
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/template_match/oxbuild/patch_search/search_list_test.txt"
+        batch_size: 64
+        is_color: false
+    }
+    transform_param {
+      mean_value: 128
+      scale: 0.00625
+    }
+    include {
+      phase: TEST
+    }
+}
+
+layer {
+  bottom: "label_P"
+  name: "data/silence"
   type: "Silence"
 }
-layer {
-  bottom: "confidence_label"
-  name: "silence_label"
-  type: "Silence"
-}
+
 ################## EOF data layers ##################
 
 
 ################## head of tower A ##################
 layer {
-  bottom: "data_template"
+  bottom: "data_A"
   top: "conv0"
   name: "conv0"
   type: "Convolution"
-  param {
-  name: "conv0_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv0_b"
-  lr_mult : 0
-  }
+  param {name: "conv0_w" lr_mult : 1}
+  param {name: "conv0_b" lr_mult : 2}
   convolution_param {
     num_output: 24
     pad: 3
@@ -150,14 +128,8 @@ layer {
   top: "conv1"
   name: "conv1"
   type: "Convolution"
-  param {
-  name: "conv1_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv1_b"
-  lr_mult : 0
-  }
+  param {name: "conv1_w" lr_mult : 1}
+  param {name: "conv1_b" lr_mult : 2}
   convolution_param {
     num_output: 64
     pad: 2
@@ -194,14 +166,8 @@ layer {
   top: "conv2"
   name: "conv2"
   type: "Convolution"
-  param {
-  name: "conv2_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv2_b"
-  lr_mult : 0
-  }
+  param {name: "conv2_w" lr_mult : 1}
+  param {name: "conv2_b" lr_mult : 2}
   convolution_param {
     num_output: 96
     pad: 1
@@ -226,14 +192,8 @@ layer {
   top: "conv3"
   name: "conv3"
   type: "Convolution"
-  param {
-  name: "conv3_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv3_b"
-  lr_mult : 0
-  }
+  param {name: "conv3_w" lr_mult : 1}
+  param {name: "conv3_b" lr_mult : 2}
   convolution_param {
     num_output: 96
     pad: 1
@@ -258,14 +218,8 @@ layer {
   top: "conv4"
   name: "conv4"
   type: "Convolution"
-  param {
-  name: "conv4_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv4_b"
-  lr_mult : 0
-  }
+  param {name: "conv4_w" lr_mult : 1}
+  param {name: "conv4_b" lr_mult : 2}
   convolution_param {
     num_output: 64
     pad: 1
@@ -335,6 +289,7 @@ layer {
     value: 0
   }
   }
+  #propagate_down: false
 }
 layer {
   bottom: "conv5"
@@ -342,42 +297,16 @@ layer {
   name: "conv5_relu"
   type: "ReLU"
 }
-layer {
-  bottom: "conv5"
-  top: "conv5_tile_w"
-  name: "conv5_tile_w"
-  type: "Tile"
-  tile_param {
-    axis: 2
-    tiles: 25
-  }
-}
-layer {
-  bottom: "conv5_tile_w"
-  top: "conv5_tile"
-  name: "conv5_tile"
-  type: "Tile"
-  tile_param {
-    axis: 3
-    tiles: 25
-  }
-}
 ################## end of tower A ##################
 
 ################## head of tower P ##################
 layer {
-  bottom: "data_search"
+  bottom: "data_P"
   top: "conv0_p"
   name: "conv0_p"
   type: "Convolution"
-  param {
-  name: "conv0_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv0_b"
-  lr_mult : 0
-  }
+  param {name: "conv0_w" lr_mult : 1}
+  param {name: "conv0_b" lr_mult : 2}
   convolution_param {
     num_output: 24
     pad: 3
@@ -414,14 +343,8 @@ layer {
   top: "conv1_p"
   name: "conv1_p"
   type: "Convolution"
-  param {
-  name: "conv1_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv1_b"
-  lr_mult : 0
-  }
+  param {name: "conv1_w" lr_mult : 1}
+  param {name: "conv1_b" lr_mult : 2}
   convolution_param {
     num_output: 64
     pad: 2
@@ -458,14 +381,8 @@ layer {
   top: "conv2_p"
   name: "conv2_p"
   type: "Convolution"
-  param {
-  name: "conv2_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv2_b"
-  lr_mult : 0
-  }
+  param {name: "conv2_w" lr_mult : 1}
+  param {name: "conv2_b" lr_mult : 2}
   convolution_param {
     num_output: 96
     pad: 1
@@ -490,14 +407,8 @@ layer {
   top: "conv3_p"
   name: "conv3_p"
   type: "Convolution"
-  param {
-  name: "conv3_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv3_b"
-  lr_mult : 0
-  }
+  param {name: "conv3_w" lr_mult : 1}
+  param {name: "conv3_b" lr_mult : 2}
   convolution_param {
     num_output: 96
     pad: 1
@@ -522,14 +433,8 @@ layer {
   top: "conv4_p"
   name: "conv4_p"
   type: "Convolution"
-  param {
-  name: "conv4_w"
-  lr_mult : 0
-  }
-  param {
-    name: "conv4_b"
-  lr_mult : 0
-  }
+  param {name: "conv4_w" lr_mult : 1}
+  param {name: "conv4_b" lr_mult : 2}
   convolution_param {
     num_output: 64
     pad: 1
@@ -599,6 +504,7 @@ layer {
     value: 0
   }
   }
+  #propagate_down: false
 }
 layer {
   bottom: "conv5_p"
@@ -606,6 +512,41 @@ layer {
   name: "conv5_relu_p"
   type: "ReLU"
 }
+layer {
+  bottom: "conv5_p"
+  top: "conv5_p_w/left"
+  top: "conv5_p_w/middle"
+  top: "conv5_p_w/right"
+  name: "conv5_p_w/slice"
+  type: "Slice"
+  slice_param {
+    axis: 2
+    slice_point: 12
+    slice_point: 13
+  }
+}
+layer {
+  bottom: "conv5_p_w/middle"
+  top: "conv5_p_h/left"
+  top: "conv5_p_h/middle"
+  top: "conv5_p_h/right"
+  name: "conv5_p_h/slice"
+  type: "Slice"
+  slice_param {
+    axis: 3
+    slice_point: 12
+    slice_point: 13
+  }
+}
+layer {
+  bottom: "conv5_p_w/left"
+  bottom: "conv5_p_w/right"
+  bottom: "conv5_p_h/left"
+  bottom: "conv5_p_h/right"
+  name: "conv5_p/silence"
+  type: "Silence"
+}
+
 ################## end of tower P ##################
 
 
@@ -614,8 +555,8 @@ layer {
 ################## classifier network ##################
 # merge blobs of two feature towers
 layer {
-  bottom: "conv5_tile"
-  bottom: "conv5_p"
+  bottom: "conv5"
+  bottom: "conv5_p_h/middle"
   top: "classifier/concat"
   name: "classifier/concat"
   type: "Concat"
@@ -628,8 +569,8 @@ layer {
   top: "classifier/conv0"
   name: "classifier/conv0"
   type: "Convolution"
-  param { lr_mult: 0.0 }
-  param { lr_mult: 0.0 }
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
   convolution_param {
     num_output: 512
     pad: 0
@@ -656,8 +597,8 @@ layer {
   top: "classifier/conv1"
   name: "classifier/conv1"
   type: "Convolution"
-  param { lr_mult: 0.0 }
-  param { lr_mult: 0.0 }
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
   convolution_param {
     num_output: 512
     pad: 0
@@ -684,8 +625,8 @@ layer {
   top: "classifier/conv2"
   name: "classifier/conv2"
   type: "Convolution"
-  param { lr_mult: 0.0 }
-  param { lr_mult: 0.0 }
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
   convolution_param {
     num_output: 2
     pad: 0
@@ -701,49 +642,23 @@ layer {
     }
   }
 }
+################## end of classifier network ##################
+
+################## loss ##################
 layer {
-  bottom: "classifier/conv2"
-  top: "classifier/softmax"
-  name: "classifier/softmax"
-  type: "Softmax"
-  softmax_param {
-    axis: 1
-  }
+  bottom : "classifier/conv2"
+  bottom : "label"
+  top: "softmax_loss"
+  type: "SoftmaxWithLoss"
+  loss_weight: 1
+  name : "softmax_loss"
 }
-layer {
-  name: "classifier/softmax_slice"
-  type: "Slice"
-  bottom: "classifier/softmax"
-  top: "classifier/softmax_A"
-  top: "classifier/softmax_B"
-  slice_param {
-    axis: 1
-    slice_point: 1
-  }
-}
-layer {
-  type: "Silence"
-  bottom: "classifier/softmax_A"
-}
+################## end of loss ##################
+
 #layer {
-#  bottom: "classifier/softmax"
-#  top: "classifier/max_w"
-#  name: "classifier/max_w"
-#  type: "ArgMax"
-#  argmax_param {
-#    out_max_val: true
-#    top_k: 1 
-#    axis: 2
-#  }
-#}
-#layer {
-#  bottom: "classifier/softmax"
-#  top: "classifier/max_h"
-#  name: "classifier/max_h"
-#  type: "ArgMax"
-#  argmax_param {
-#    out_max_val: true
-#    top_k: 1
-#    axis: 3
-#  }
+#  bottom : "classifier/conv2"
+#  bottom : "confidence_label"
+#  name : "accuracy"
+#  type : "Accuracy"
+#  top : "accuracy"
 #}

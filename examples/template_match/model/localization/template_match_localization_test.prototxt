@@ -2,9 +2,9 @@ name: "template_match_layers"
 
 ################## data layers ##################
 layer {
-  name: "data_template"
+  name: "data_A"
   type: "Input"
-  top: "data_template"
+  top: "data_A"
   input_param {
     shape: {
     dim: 1
@@ -15,9 +15,9 @@ layer {
   }
 }
 layer {
-  name: "data_search"
+  name: "data_P"
   type: "Input"
-  top: "data_search"
+  top: "data_P"
   input_param {
     shape: {
     dim: 1
@@ -31,7 +31,7 @@ layer {
 
 ################## head of tower A ##################
 layer {
-  bottom: "data_template"
+  bottom: "data_A"
   top: "conv0"
   name: "conv0"
   type: "Convolution"
@@ -236,27 +236,9 @@ layer {
     dropout_ratio: 0.5
   }
 }
-layer {
-  name: "st"
-  type: "SpatialTransformer"
-  bottom: "pool4"
-  bottom: "pool4"
-  top: "st/pool4"
-  st_param {
-    to_compute_dU: false
-    output_H: 8
-    output_W: 8
-    theta_1_1: 0.4
-    theta_1_2: 0
-    theta_2_1: 0
-    theta_2_2: 0.4
-    theta_1_3: 0
-    theta_2_3: 0
-  }
-}
 # fully convolutional layer to generate feature vector
 layer {
-  bottom: "st/pool4"
+  bottom: "pool4"
   top: "conv5"
   name: "conv5"
   type: "Convolution"
@@ -313,7 +295,7 @@ layer {
 
 ################## head of tower P ##################
 layer {
-  bottom: "data_search"
+  bottom: "data_P"
   top: "conv0_p"
   name: "conv0_p"
   type: "Convolution"

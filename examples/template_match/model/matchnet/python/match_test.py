@@ -3,44 +3,8 @@ import argparse
 import caffe
 import matplotlib.pyplot as plt
 import numpy as np
-
-def readFileList(filepath):
-    file_list = []
-    label_list = []
-    with open(filepath) as file:
-        for line in file:
-            path = line.strip().split(' ')[0]
-            file_list.append(path)
-            label = float(line.strip().split(' ')[1])
-            label_list.append(label)
-    return file_list, label_list
-
-def loadImage(image_path, transformer, color):
-    img = caffe.io.load_image(image_path, color)
-    img = (img * 255 - 128) * 0.00625
-    transformed_image = transformer.preprocess('data', img)
-    return transformed_image
-
-def visualizePair(img1, img2, label, save_path):
-    height = max(img1.shape[0], img2.shape[0])
-    width = max(img1.shape[1], img2.shape[1])
-    concat = np.zeros((height, width * 2, 3), dtype=np.float32)
-    img1_left_top_y = (height - img1.shape[0]) / 2
-    img1_left_top_x = (width - img1.shape[1]) / 2
-    concat[img1_left_top_y : img1_left_top_y+img1.shape[0], img1_left_top_x : img1_left_top_x+img1.shape[1], :] = img1
-    img2_left_top_y = (height - img2.shape[0]) / 2
-    img2_left_top_x = (width - img2.shape[1]) / 2 + width
-    concat[img2_left_top_y:img2_left_top_y+img2.shape[0], img2_left_top_x:img2_left_top_x+img2.shape[1], :] = img2
-    fig, ax = plt.subplots(figsize=(12, 12)) #create figure
-    ax.set_title(label, fontsize=64)
-    ax.imshow(concat, aspect='equal')
-    plt.axis('off')
-    plt.tight_layout()
-    plt.draw()
-    plt.savefig(save_path)
-    print 'save image: ', save_path
-
-
+sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
+import common_utilities as cu
 
 
 if __name__ == '__main__':
@@ -66,8 +30,8 @@ if __name__ == '__main__':
     net = caffe.Net(args.proto, args.model, caffe.TEST)
     print 'Loaded network: ', args.model
 
-    template_list, label_list = readFileList(args.template_list)
-    search_list, no_use = readFileList(args.search_list)
+    template_list, regression_list = cu.readFileList(args.template_list, 1, 4)
+    search_list, label_list = cu.readFileList(args.search_list, 1, 1)
     if not len(template_list) == len(search_list):
          logging.error('template list and search list have diff size.\n')
     test_num = min(len(template_list), args.test_num)
@@ -82,12 +46,12 @@ if __name__ == '__main__':
 
     true_num = 0
     for i in range(test_num):
-        template_path = template_list[i]
-        search_path = search_list[i]
+        template_path = template_list[i][0]
+        search_path = search_list[i][0]
         template_filename = os.path.split(template_path)[1]
         search_filename = os.path.split(search_path)[1]
-        template_img = loadImage(template_path, template_transformer, color=False)
-        search_img = loadImage(search_path, search_transformer, color=False)
+        template_img = cu.loadImageByCaffe(template_path, template_transformer, color=False)
+        search_img = cu.loadImageByCaffe(search_path, search_transformer, color=False)
 
         net.blobs['data_A'].data[...] = template_img
         net.blobs['data_P'].data[...] = search_img
@@ -97,7 +61,7 @@ if __name__ == '__main__':
         if softmax_prob[0] < softmax_prob[1]:
             confidence = 1
         result = 0
-        if confidence == label_list[i]:
+        if confidence == label_list[i][0]:
             result = 1
         true_num += result
         print '[', i, ']', template_filename, ' match ', search_filename, ': ', result
@@ -106,7 +70,7 @@ if __name__ == '__main__':
         search_origin_img = caffe.io.load_image(search_path)
         save_path = template_filename + search_filename
         save_path = os.path.join(args.output_folder, save_path)
-        visualizePair(template_origin_img, search_origin_img, prob, save_path)
+        cu.visMatchNetPair(template_origin_img, search_origin_img, prob, save_path)
 
     print "The percentage of true num is ", float(true_num) / test_num
 

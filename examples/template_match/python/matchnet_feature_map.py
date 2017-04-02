@@ -1,0 +1,62 @@
+import os, sys, cv2, logging
+import argparse
+import caffe
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+import random
+sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
+import common_utilities as cu
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Template Localization Demo')
+    parser.add_argument('proto', help='network prototxt')
+    parser.add_argument('model', help='trained model')
+    parser.add_argument('template_image', help='template image path')
+    parser.add_argument('search_image', help='search image path')
+    parser.add_argument('--cpu', dest='cpu_mode', help='Use cpu mode', action='store_true')
+    parser.set_defaults(cpu_mode=False)
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.model):
+        raise IOError(('Model not found: {:s}.\n').format(args.model))
+
+    if args.cpu_mode:
+        caffe.set_mode_cpu()
+    else:
+        caffe.set_mode_gpu()
+
+    net = caffe.Net(args.proto, args.model, caffe.TEST)
+    print 'Loaded network: ', args.model
+    
+    net.blobs['data_A'].reshape(1, 1, 64, 64)
+    net.blobs['data_P'].reshape(1, 1, 256, 256)
+
+    template_transformer = caffe.io.Transformer({'data': net.blobs['data_A'].data.shape})
+    template_transformer.set_transpose('data', (2, 0, 1))
+    search_transformer = caffe.io.Transformer({'data': net.blobs['data_P'].data.shape})
+    search_transformer.set_transpose('data', (2, 0, 1))
+
+    template_path = args.template_image
+    search_path = args.search_image
+    template_img = cu.loadImageByCaffe(template_path, template_transformer, color=False)
+    search_img = cu.loadImageByCaffe(search_path, search_transformer, color=False)
+
+    net.blobs['data_A'].data[...] = template_img
+    net.blobs['data_P'].data[...] = search_img
+    output = net.forward()
+
+    template_origin_img = caffe.io.load_image(template_path)
+    search_origin_img = caffe.io.load_image(search_path)
+    plt.figure(1)
+    plt.imshow(template_origin_img)
+    plt.figure(2)
+    plt.imshow(search_origin_img)
+    featuremap_template = net.blobs['pool4'].data[0, :9]
+    featuremap_search = net.blobs['pool4_p'].data[0, :9]
+    plt.figure(3)
+    cu.visSquare(featuremap_template, featuremap_template.min(), featuremap_template.max())
+    plt.figure(4)
+    cu.visSquare(featuremap_search, featuremap_search.min(), featuremap_search.max())
+    plt.show()
