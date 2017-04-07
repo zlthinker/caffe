@@ -36,8 +36,8 @@ if __name__ == '__main__':
 	net = caffe.Net(args.proto, args.model, caffe.TEST)
 	print 'Loaded network: ', args.model
 
-	template_list, label_list1 = cu.readFileList(args.template_list, 1, 1)
-	search_list, label_list2 = cu.readFileList(args.search_list, 1, 1)
+	template_list, label_list1 = cu.readFileList(args.template_list, 1, 4)
+	search_list, label_list2 = cu.readFileList(args.search_list, 1, 0)
 	test_num = min(len(template_list), len(search_list), args.test_num)
 	total_test_num = min(len(template_list), len(search_list))
 	

@@ -90,7 +90,31 @@ def visMatchNetPair(img1, img2, label, save_path):
     plt.tight_layout()
     plt.draw()
     plt.savefig(save_path)
-    print 'save image: ', save_path
+
+def visMVMatchPair(imgs1, imgs2, label, gt_label, save_path, save=True): 
+    view_num = max(len(imgs1), len(imgs2))
+    height = imgs1[0].shape[0]
+    width = imgs1[0].shape[1]
+    concat = np.zeros((height * 2, width * view_num, 3), dtype=np.float32)
+    for i in range(len(imgs1)):
+    	left_top_x = i * width
+    	left_top_y = 0
+    	concat[left_top_y : left_top_y + height, left_top_x : left_top_x + width, :] = imgs1[i]
+    for i in range(len(imgs2)):
+    	left_top_x = i * width
+    	left_top_y = height
+    	concat[left_top_y : left_top_y + height, left_top_x : left_top_x + width, :] = imgs2[i]
+
+    fig, ax = plt.subplots(figsize=(6, 4.5)) #create figure 600x450
+    title = str(label)+'/'+str(gt_label)
+    ax.set_title(title, fontsize=32)
+    ax.imshow(concat)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.draw()
+    if save:
+    	plt.savefig(save_path)
+    return concat
 
 def visLocalization(img1, img2, simi_map, save_path, overlap):
 	height = max(img1.shape[0], img2.shape[0])

@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import random
-import nms
 sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
 import common_utilities as cu
 
@@ -48,25 +47,43 @@ if __name__ == '__main__':
     else:
         caffe.set_mode_gpu()
 
-    net = caffe.Net(args.proto, args.model, caffe.TEST)
+    net = caffe.Net(args.proto, args.model, caffe.TRAIN)
     print 'Loaded network: ', args.model
     
-    net.blobs['data_template'].reshape(1, 1, 64, 64)
-    net.blobs['data_search'].reshape(1, 1, 256, 256)
+    net.blobs['data_A'].reshape(1, 1, 64, 64)
+    net.blobs['data_P'].reshape(1, 1, 256, 256)
 
-    template_transformer = caffe.io.Transformer({'data': net.blobs['data_template'].data.shape})
+    template_transformer = caffe.io.Transformer({'data': net.blobs['data_A'].data.shape})
     template_transformer.set_transpose('data', (2, 0, 1))
-    search_transformer = caffe.io.Transformer({'data': net.blobs['data_search'].data.shape})
+    search_transformer = caffe.io.Transformer({'data': net.blobs['data_P'].data.shape})
     search_transformer.set_transpose('data', (2, 0, 1))
 
     template_path = args.template_image
     search_path = args.search_image
-    template_img = cu.loadImage(template_path, template_transformer, color=False)
-    search_img = cu.loadImage(search_path, search_transformer, color=False)
+    template_img = cu.loadImageByCaffe(template_path, template_transformer, color=False)
+    search_img = cu.loadImageByCaffe(search_path, search_transformer, color=False)
 
-    net.blobs['data_template'].data[...] = template_img
-    net.blobs['data_search'].data[...] = search_img
+    net.blobs['data_A'].data[...] = template_img
+    net.blobs['data_P'].data[...] = search_img
+    classifier_label = np.ones((1, 1, 1, 1))
+    net.blobs['label'] = classifier_label
     output = net.forward()
+
+    diff = np.ones((1, 2, 1, 1))
+
+    diffs = net.backward(start='classifier/conv2', end='conv0', **{'classifier/conv2': diff})
+    print diffs.keys()
+    exit(0)
+    diff_A = diffs['data_A'][0]
+    print diff_A.shape
+    print diff_A.min()
+    print diff_A.max()
+    exit(0)
+    cu.visSquare(diff_A, diff_A.min(), diff_A.max())
+    plt.show()
+    for key, val in bw.iteritems():
+        print key
+    exit(0)
 
     template_origin_img = caffe.io.load_image(template_path)
     search_origin_img = caffe.io.load_image(search_path)
@@ -79,7 +96,7 @@ if __name__ == '__main__':
     min = min(featuremap_template.min(), featuremap_search.min())
     max = max(featuremap_template.max(), featuremap_search.max())
     plt.figure(3)
-    cu.vis_square(featuremap_template, min, max)
+    cu.visSquare(featuremap_template, min, max)
     plt.figure(4)
-    cu.vis_square(featuremap_search, min, max)
+    cu.visSquare(featuremap_search, min, max)
     plt.show()

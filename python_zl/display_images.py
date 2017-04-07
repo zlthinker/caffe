@@ -20,16 +20,21 @@ def readSiblingFileList(filepath):
             label_list.append(label)
     return file_list, file_list_p, label_list
 
-def concatPairwiseImages(img1, img2, label):
-    height = max(img1.shape[0], img2.shape[0])
-    width = max(img1.shape[1], img2.shape[1])
-    concat = np.zeros((height, width * 2, 3), dtype=np.float32)
-    img1_left_top_y = (height - img1.shape[0]) / 2
-    img1_left_top_x = (width - img1.shape[1]) / 2
-    concat[img1_left_top_y: img1_left_top_y + img1.shape[0], img1_left_top_x: img1_left_top_x + img1.shape[1], :] = img1
-    img2_left_top_y = (height - img2.shape[0]) / 2
-    img2_left_top_x = (width - img2.shape[1]) / 2 + width
-    concat[img2_left_top_y:img2_left_top_y + img2.shape[0], img2_left_top_x:img2_left_top_x + img2.shape[1], :] = img2
+def concatImages(imgs, label):
+    img_num = len(imgs)
+    height = imgs[0].shape[0]
+    width = imgs[0].shape[1]
+    for img in imgs:
+        if img.shape[0] > height:
+            height = img.shape[0]
+        if img.shape[1] > width:
+            width = img.shape[1]
+    concat = np.zeros((height, width * img_num, 3), dtype=np.float32)
+    for i in range(img_num): 
+        img = imgs[i]    
+        img_left_top_y = (height - img.shape[0]) / 2
+        img_left_top_x = (width - img.shape[1]) / 2 + width * i
+        concat[img_left_top_y: img_left_top_y + img.shape[0], img_left_top_x: img_left_top_x + img.shape[1], :] = img
     if label > 0.5:
         cv2.rectangle(concat, (0, 0), (concat.shape[1], concat.shape[0]), (0, 1, 0), 4)
     else:
@@ -41,7 +46,7 @@ def concatPairwiseImages(img1, img2, label):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Visualize pairwise images')
+    parser = argparse.ArgumentParser(description='Visualize image list')
     parser.add_argument('image_list', help='image list')
     args=parser.parse_args()
 
@@ -50,22 +55,20 @@ if __name__ == '__main__':
     if not os.path.isfile(image_list_path):
         raise IOError('File not exists:' + image_list_path)
 
-    image_list, label_list = cu.readFileList(image_list_path, 2, 1)
+    image_list, label_list = cu.readFileList(image_list_path, 6, 1)
     image_num = len(image_list)
 
     fig = plt.figure()
     ax = fig.gca()
     fig.show()
     for i in range(image_num):
-        image = caffe.io.load_image(image_list[i][0])
-        image_p = caffe.io.load_image(image_list[i][1])
-        concat = concatPairwiseImages(image, image_p, label_list[i][0])
+        imgs = []
+        for path in image_list[i]:
+            image = caffe.io.load_image(path)
+            imgs.append(image)
+        concat = concatImages(imgs, label_list[i][0])
         ax.imshow(concat)
         fig.canvas.draw()
         key = raw_input('press enter to continue, others to exit:\n')
         if key != '':
             exit(0)
-
-
-
-
