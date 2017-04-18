@@ -9,112 +9,135 @@ import nms
 #sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
 #import common_utilities as cu
 
-def L2distance(vector1, vector2):
+def PrintRunningTime(timing_info):
+	print('------------------------------')
+	total_time = 0
+	for info in timing_info:
+		print('| %s: %0.3f second(s)' % (info[0], info[1]))
+		total_time += info[1]
+	print('| %s: %0.3f second(s)' % ('Total', total_time))
+	print('------------------------------')
+
+def L2distance(vector1, vector2, normalize=True):
 	if vector1.shape[0] != vector2.shape[0]:
 		print "The dimension of two vectors are different."
 		return 1
-	norm1 = 0
-	norm2 = 0
-	for val in vector1:
-		norm1 += val * val
-	for val in vector2:
-		norm2 += val * val
-	norm1 = math.sqrt(norm1)
-	norm2 = math.sqrt(norm2)
+	norm1 = 1.0
+	norm2 = 1.0
+	if normalize:
+		norm1 = 0
+		norm2 = 0
+		for i in range(vector1.shape[0]):
+			norm1 = norm1 + vector1[i] * vector1[i]
+			norm2 = norm2 + vector2[i] * vector2[i]
+		norm1 = math.sqrt(norm1)
+		norm2 = math.sqrt(norm2)
 	dist = 0
 	for i in range(vector1.shape[0]):
-		dist += vector1[i] * vector2[i] / (norm1 * norm2)
-	dist = 1 - dist
-	return dist
+		if normalize:
+			dist = dist + math.pow((vector1[i]/norm1 - vector2[i]/norm2), 2)
+		else:
+			dist = dist + math.pow((vector1[i] - vector2[i]), 2)
+	return dist / 2.0
 
 def readFileList(filepath, file_num, label_num):
-    file_list_list = []
-    label_list_list = []
-    with open(filepath) as file:
-        for line in file:
-            elements = line.strip().split(' ')
-            if file_num + label_num != len(elements):
-            	raise Exception("Inconsistent number of elements!")
-            file_list = []
-            label_list = []
-            for i in range(file_num):
-            	file_list.append(elements[i])
-            for i in range(label_num):
-            	label = float(elements[i + file_num])
-            	label_list.append(label)
-            file_list_list.append(file_list)
-            label_list_list.append(label_list)
-    return file_list_list, label_list_list
+	file_list_list = []
+	label_list_list = []
+	with open(filepath) as file:
+		for line in file:
+			elements = line.strip().split(' ')
+			if file_num + label_num != len(elements):
+				raise Exception("Inconsistent number of elements!")
+			file_list = []
+			label_list = []
+			for i in range(file_num):
+				file_list.append(elements[i])
+			for i in range(label_num):
+				label = float(elements[i + file_num])
+				label_list.append(label)
+			file_list_list.append(file_list)
+			label_list_list.append(label_list)
+	return file_list_list, label_list_list
+
+def readFilePathList(filepath):
+	file_list_list = []
+	with open(filepath) as file:
+		for line in file:
+			file_list = line.strip().split(' ')
+			file_list_list.append(file_list)
+	return file_list_list
 
 
 def loadImageByCaffe(image_path, transformer, color):
-    img = caffe.io.load_image(image_path, color)
-    img = (img * 255 - 128) * 0.00625
-    transformed_image = transformer.preprocess('data', img)
-    return transformed_image
+	img = caffe.io.load_image(image_path, color)
+	img = (img * 255 - 128) * 0.00625
+	transformed_image = transformer.preprocess('data', img)
+	return transformed_image
 
 def visSquare(data, min, max):
-    """Take an array of shape (n, height, width) or (n, height, width, 3)
-       and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)"""
-    
-    # normalize data for display
-    data = (data - min) / (max - min)
-    
-    # force the number of filters to be square
-    n = int(np.ceil(np.sqrt(data.shape[0])))
-    padding = (((0, n ** 2 - data.shape[0]),
-               (0, 1), (0, 1))                 # add some space between filters
-               + ((0, 0),) * (data.ndim - 3))  # don't pad the last dimension (if there is one)
-    data = np.pad(data, padding, mode='constant', constant_values=1)  # pad with ones (white)
-    
-    # tile the filters into an image
-    data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
-    data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
-    
-    plt.imshow(data); plt.axis('off')
+	"""Take an array of shape (n, height, width) or (n, height, width, 3)
+	   and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)"""
+	
+	# normalize data for display
+	data = (data - min) / (max - min)
+	
+	# force the number of filters to be square
+	n = int(np.ceil(np.sqrt(data.shape[0])))
+	padding = (((0, n ** 2 - data.shape[0]),
+			   (0, 1), (0, 1))				 # add some space between filters
+			   + ((0, 0),) * (data.ndim - 3))  # don't pad the last dimension (if there is one)
+	data = np.pad(data, padding, mode='constant', constant_values=1)  # pad with ones (white)
+	
+	# tile the filters into an image
+	data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
+	data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
+	
+	plt.imshow(data); plt.axis('off')
 
-def visMatchNetPair(img1, img2, label, save_path):
-    height = max(img1.shape[0], img2.shape[0])
-    width = max(img1.shape[1], img2.shape[1])
-    concat = np.zeros((height, width * 2, 3), dtype=np.float32)
-    img1_left_top_y = (height - img1.shape[0]) / 2
-    img1_left_top_x = (width - img1.shape[1]) / 2
-    concat[img1_left_top_y : img1_left_top_y+img1.shape[0], img1_left_top_x : img1_left_top_x+img1.shape[1], :] = img1
-    img2_left_top_y = (height - img2.shape[0]) / 2
-    img2_left_top_x = (width - img2.shape[1]) / 2 + width
-    concat[img2_left_top_y:img2_left_top_y+img2.shape[0], img2_left_top_x:img2_left_top_x+img2.shape[1], :] = img2
-    fig, ax = plt.subplots(figsize=(6, 3.5)) #create figure 600x350
-    ax.set_title(label, fontsize=32)
-    ax.imshow(concat)
-    plt.axis('off')
-    plt.tight_layout()
-    plt.draw()
-    plt.savefig(save_path)
+def visMatchNetPair(img1, img2, label, save_path, save=True):
+	height = max(img1.shape[0], img2.shape[0])
+	width = max(img1.shape[1], img2.shape[1])
+	concat = np.zeros((height, width * 2, 3), dtype=np.float32)
+	img1_left_top_y = (height - img1.shape[0]) / 2
+	img1_left_top_x = (width - img1.shape[1]) / 2
+	concat[img1_left_top_y : img1_left_top_y+img1.shape[0], img1_left_top_x : img1_left_top_x+img1.shape[1], :] = img1
+	img2_left_top_y = (height - img2.shape[0]) / 2
+	img2_left_top_x = (width - img2.shape[1]) / 2 + width
+	concat[img2_left_top_y:img2_left_top_y+img2.shape[0], img2_left_top_x:img2_left_top_x+img2.shape[1], :] = img2
+	fig, ax = plt.subplots(figsize=(6, 3.5)) #create figure 600x350
+	ax.set_title(label, fontsize=32)
+	ax.imshow(concat)
+	plt.axis('off')
+	plt.tight_layout()
+	plt.draw()
+	if save:
+		plt.savefig(save_path)
+	return concat
 
 def visMVMatchPair(imgs1, imgs2, label, gt_label, save_path, save=True): 
-    view_num = max(len(imgs1), len(imgs2))
-    height = imgs1[0].shape[0]
-    width = imgs1[0].shape[1]
-    concat = np.zeros((height * 2, width * view_num, 3), dtype=np.float32)
-    for i in range(len(imgs1)):
-    	left_top_x = i * width
-    	left_top_y = 0
-    	concat[left_top_y : left_top_y + height, left_top_x : left_top_x + width, :] = imgs1[i]
-    for i in range(len(imgs2)):
-    	left_top_x = i * width
-    	left_top_y = height
-    	concat[left_top_y : left_top_y + height, left_top_x : left_top_x + width, :] = imgs2[i]
+	view_num = max(len(imgs1), len(imgs2))
+	height = imgs1[0].shape[0]
+	width = imgs1[0].shape[1]
+	concat = np.zeros((height * 2, width * view_num, 3), dtype=np.float32)
+	for i in range(len(imgs1)):
+		left_top_x = i * width
+		left_top_y = 0
+		concat[left_top_y : left_top_y + height, left_top_x : left_top_x + width, :] = imgs1[i]
+	for i in range(len(imgs2)):
+		left_top_x = i * width
+		left_top_y = height
+		concat[left_top_y : left_top_y + height, left_top_x : left_top_x + width, :] = imgs2[i]
 
-    fig, ax = plt.subplots(figsize=(6, 4.5)) #create figure 600x450
-    title = str(label)+'/'+str(gt_label)
-    ax.set_title(title, fontsize=32)
-    ax.imshow(concat)
-    plt.axis('off')
-    plt.tight_layout()
-    plt.draw()
-    if save:
-    	plt.savefig(save_path)
-    return concat
+	fig, ax = plt.subplots(figsize=(10, 7.5)) #create figure 600x450
+	title = str(label)+'/'+str(gt_label)
+	ax.set_title(title, fontsize=32)
+	ax.imshow(concat)
+	plt.axis('off')
+	plt.tight_layout()
+	plt.draw()
+	if save:
+		plt.savefig(save_path)
+	return concat
 
 def visLocalization(img1, img2, simi_map, save_path, overlap):
 	height = max(img1.shape[0], img2.shape[0])
@@ -181,3 +204,22 @@ def visLocalization(img1, img2, simi_map, save_path, overlap):
 	plt.tight_layout()
 	plt.draw()
 	plt.savefig(save_path)
+
+def getAverageMaxMin(mat):
+	shape = mat.shape
+	dim = len(shape)
+	max = sys.float_info.min
+	min = sys.float_info.max
+	sum = 0
+	if dim != 2:
+		raise Exception('Inconsistent dimension!')
+	for x in range(shape[0] - 1):
+		for y in range(shape[1] - 1):
+			val = mat[x][y]
+			if val > max:
+				max = val
+			if val < min:
+				min = val
+			sum = sum + val
+	ave = sum / (shape[0] * shape[1])
+	return ave, max, min

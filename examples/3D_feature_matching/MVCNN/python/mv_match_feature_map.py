@@ -51,14 +51,21 @@ if __name__ == '__main__':
     net.blobs['data_P2'].data[...] = img_P2
     net.blobs['data_P3'].data[...] = img_P3
     output = net.forward()
-    feature_map_A = net.blobs['combine_A'].data[0, :64]
-    feature_map_P = net.blobs['combine_P'].data[0, :64]
-    min_val = min(feature_map_A.min(), feature_map_P.min())
-    max_val = max(feature_map_A.max(), feature_map_P.max())
+    # feature_map_A1 = net.blobs['A1/pool4'].data[0, :, :, :]
+    # feature_map_A2 = net.blobs['A2/pool4'].data[0, :, :, :]
+    # feature_map_A3 = net.blobs['A3/pool4'].data[0, :, :, :]
+    feature_map_A = net.blobs['combine_A'].data[0, :, :, :]
+    feature_map_P = net.blobs['combine_P'].data[0, :, :, :]
+
+    # normalization
+    min = min(feature_map_A.min(), feature_map_P.min())
+    max = max(feature_map_A.max(), feature_map_P.max())
+    feature_map_A = (feature_map_A - min) / (max - min)
+    feature_map_P = (feature_map_P - min) / (max - min)
     plt.figure(1)
-    cu.visSquare(feature_map_A, min_val, max_val)
+    cu.visSquare(feature_map_A, feature_map_A.min(), feature_map_A.max())
     plt.figure(2)
-    cu.visSquare(feature_map_P, min_val, max_val)
+    cu.visSquare(feature_map_P, feature_map_P.min(), feature_map_P.max())
 
     origin_A1 = caffe.io.load_image(args.img_A1)
     origin_A2 = caffe.io.load_image(args.img_A2)
@@ -68,5 +75,6 @@ if __name__ == '__main__':
     origin_P3 = caffe.io.load_image(args.img_P3)
     imgs_A = [origin_A1, origin_A2, origin_A3]
     imgs_P = [origin_P1, origin_P2, origin_P3]
+    plt.figure(2)
     cu.visMVMatchPair(imgs_A, imgs_P, "", "", "", save=False)
     plt.show()

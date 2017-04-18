@@ -1,0 +1,584 @@
+name: "Multi-view CNN Triplet Network"
+
+################## data layers ##################
+layer {
+  name: "data_A1"
+  type: "Input"
+  top: "data_A1"
+  input_param {shape: {dim: 1 dim: 1 dim: 64 dim: 64}
+  }
+}
+layer {
+  name: "data_A2"
+  type: "Input"
+  top: "data_A2"
+  input_param {shape: {dim: 1 dim: 1 dim: 64 dim: 64}
+  }
+}
+layer {
+  name: "data_A3"
+  type: "Input"
+  top: "data_A3"
+  input_param {shape: {dim: 1 dim: 1 dim: 64 dim: 64}
+  }
+}
+################## eof data layers ##################
+
+
+################## head of tower A1 ##################
+layer {
+  bottom: "data_A1"
+  top: "A1/conv0"
+  name: "A1/conv0"
+  type: "Convolution"
+  param {name: "conv0_w" lr_mult : 1}
+  param {name: "conv0_b" lr_mult : 2}
+  convolution_param {
+    num_output: 24
+    pad: 3
+    kernel_size: 7
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A1/conv0"
+  top: "A1/conv0"
+  name: "A1/conv0_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A1/conv0"
+  top: "A1/pool0"
+  name: "A1/pool0"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+layer {
+  bottom: "A1/pool0"
+  top: "A1/conv1"
+  name: "A1/conv1"
+  type: "Convolution"
+  param {name: "conv1_w" lr_mult : 1}
+  param {name: "conv1_b" lr_mult : 2}
+  convolution_param {
+    num_output: 64
+    pad: 2
+    kernel_size: 5
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A1/conv1"
+  top: "A1/conv1"
+  name: "A1/conv1_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A1/conv1"
+  top: "A1/pool1"
+  name: "A1/pool1"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+layer {
+  bottom: "A1/pool1"
+  top: "A1/conv2"
+  name: "A1/conv2"
+  type: "Convolution"
+  param {name: "conv2_w" lr_mult : 1}
+  param {name: "conv2_b" lr_mult : 2}
+  convolution_param {
+    num_output: 96
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A1/conv2"
+  top: "A1/conv2"
+  name: "A1/conv2_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A1/conv2"
+  top: "A1/conv3"
+  name: "A1/conv3"
+  type: "Convolution"
+  param {name: "conv3_w" lr_mult : 1}
+  param {name: "conv3_b" lr_mult : 2}
+  convolution_param {
+    num_output: 96
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A1/conv3"
+  top: "A1/conv3"
+  name: "A1/conv3_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A1/conv3"
+  top: "A1/conv4"
+  name: "A1/conv4"
+  type: "Convolution"
+  param {name: "conv4_w" lr_mult : 1}
+  param {name: "conv4_b" lr_mult : 2}
+  convolution_param {
+    num_output: 64
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A1/conv4"
+  top: "A1/conv4"
+  name: "A1/conv4_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A1/conv4"
+  top: "A1/pool4"
+  name: "A1/pool4"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+
+################## eof tower A1 ##################
+
+################## head of tower A2 ##################
+layer {
+  bottom: "data_A2"
+  top: "A2/conv0"
+  name: "A2/conv0"
+  type: "Convolution"
+  param {name: "conv0_w" lr_mult : 1}
+  param {name: "conv0_b" lr_mult : 2}
+  convolution_param {
+    num_output: 24
+    pad: 3
+    kernel_size: 7
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A2/conv0"
+  top: "A2/conv0"
+  name: "A2/conv0_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A2/conv0"
+  top: "A2/pool0"
+  name: "A2/pool0"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+layer {
+  bottom: "A2/pool0"
+  top: "A2/conv1"
+  name: "A2/conv1"
+  type: "Convolution"
+  param {name: "conv1_w" lr_mult : 1}
+  param {name: "conv1_b" lr_mult : 2}
+  convolution_param {
+    num_output: 64
+    pad: 2
+    kernel_size: 5
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A2/conv1"
+  top: "A2/conv1"
+  name: "A2/conv1_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A2/conv1"
+  top: "A2/pool1"
+  name: "A2/pool1"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+layer {
+  bottom: "A2/pool1"
+  top: "A2/conv2"
+  name: "A2/conv2"
+  type: "Convolution"
+  param {name: "conv2_w" lr_mult : 1}
+  param {name: "conv2_b" lr_mult : 2}
+  convolution_param {
+    num_output: 96
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A2/conv2"
+  top: "A2/conv2"
+  name: "A2/conv2_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A2/conv2"
+  top: "A2/conv3"
+  name: "A2/conv3"
+  type: "Convolution"
+  param {name: "conv3_w" lr_mult : 1}
+  param {name: "conv3_b" lr_mult : 2}
+  convolution_param {
+    num_output: 96
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A2/conv3"
+  top: "A2/conv3"
+  name: "A2/conv3_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A2/conv3"
+  top: "A2/conv4"
+  name: "A2/conv4"
+  type: "Convolution"
+  param {name: "conv4_w" lr_mult : 1}
+  param {name: "conv4_b" lr_mult : 2}
+  convolution_param {
+    num_output: 64
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A2/conv4"
+  top: "A2/conv4"
+  name: "A2/conv4_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A2/conv4"
+  top: "A2/pool4"
+  name: "A2/pool4"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+
+################## eof tower A2 ##################
+
+################## head of tower A3 ##################
+layer {
+  bottom: "data_A3"
+  top: "A3/conv0"
+  name: "A3/conv0"
+  type: "Convolution"
+  param {name: "conv0_w" lr_mult : 1}
+  param {name: "conv0_b" lr_mult : 2}
+  convolution_param {
+    num_output: 24
+    pad: 3
+    kernel_size: 7
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A3/conv0"
+  top: "A3/conv0"
+  name: "A3/conv0_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A3/conv0"
+  top: "A3/pool0"
+  name: "A3/pool0"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+layer {
+  bottom: "A3/pool0"
+  top: "A3/conv1"
+  name: "A3/conv1"
+  type: "Convolution"
+  param {name: "conv1_w" lr_mult : 1}
+  param {name: "conv1_b" lr_mult : 2}
+  convolution_param {
+    num_output: 64
+    pad: 2
+    kernel_size: 5
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A3/conv1"
+  top: "A3/conv1"
+  name: "A3/conv1_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A3/conv1"
+  top: "A3/pool1"
+  name: "A3/pool1"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+layer {
+  bottom: "A3/pool1"
+  top: "A3/conv2"
+  name: "A3/conv2"
+  type: "Convolution"
+  param {name: "conv2_w" lr_mult : 1}
+  param {name: "conv2_b" lr_mult : 2}
+  convolution_param {
+    num_output: 96
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A3/conv2"
+  top: "A3/conv2"
+  name: "A3/conv2_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A3/conv2"
+  top: "A3/conv3"
+  name: "A3/conv3"
+  type: "Convolution"
+  param {name: "conv3_w" lr_mult : 1}
+  param {name: "conv3_b" lr_mult : 2}
+  convolution_param {
+    num_output: 96
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A3/conv3"
+  top: "A3/conv3"
+  name: "A3/conv3_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A3/conv3"
+  top: "A3/conv4"
+  name: "A3/conv4"
+  type: "Convolution"
+  param {name: "conv4_w" lr_mult : 1}
+  param {name: "conv4_b" lr_mult : 2}
+  convolution_param {
+    num_output: 64
+    pad: 1
+    kernel_size: 3
+    stride: 1
+  weight_filler {
+    type : "msra"
+  }
+  bias_filler {
+    type : "constant"
+  }
+  }
+}
+layer {
+  bottom: "A3/conv4"
+  top: "A3/conv4"
+  name: "A3/conv4_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "A3/conv4"
+  top: "A3/pool4"
+  name: "A3/pool4"
+  type: "Pooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+    pad: 0
+  }
+}
+
+################## eof tower A3 ##################
+
+################## combine views ##################
+layer {
+  bottom: "A1/pool4"
+  bottom: "A2/pool4"
+  bottom: "A3/pool4"
+  top: "combine_A"
+  name: "combine_A"
+  type: "Eltwise"
+  eltwise_param {
+    operation: MAX
+  }
+}
+################## eof combine views ##################
+
+################## bottle neck ##################
+layer {
+  bottom: "combine_A"
+  top: "descriptor_pooling"
+  name: "descriptor_pooling"
+  type: "Reshape"
+  reshape_param { shape { dim:0 dim:-1 dim:1 dim:1 } }
+}
+
+
+layer {
+  bottom: "combine_A"
+  top: "descriptor"
+  name: "descriptor"
+  type: "InnerProduct"
+  param {
+    name : "neck0_w"
+    lr_mult : 1
+    decay_mult : 1
+  }
+  param {
+    name : "neck0_b"
+    lr_mult  : 2
+    decay_mult : 0
+  }
+  inner_product_param {
+    num_output : 512
+    weight_filler { type : "msra" }
+    bias_filler { type : "constant" }
+  }
+}
+################## eof bottle neck ##################
+

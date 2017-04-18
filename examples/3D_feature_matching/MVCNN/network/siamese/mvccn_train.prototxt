@@ -7,7 +7,7 @@ layer {
     top: "merged_data"
     top: "label"
     flexible_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/fuzhen/data/multiview_patch_list_train.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/stadium/data/hard_neg/hard_negative_list_train.txt"
         batch_size: 64
         is_color: false
         img_num: 6
@@ -27,8 +27,8 @@ layer {
     top: "merged_data"
     top: "label"
     flexible_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/fuzhen/data/multiview_patch_list_test.txt"
-        batch_size: 64
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/stadium/data/hard_neg/hard_negative_list_test.txt"
+        batch_size: 32
         is_color: false
         img_num: 6
         label_num: 1
