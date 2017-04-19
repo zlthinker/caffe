@@ -1,0 +1,110 @@
+name: "Multi-view CNN"
+
+################## data layers ##################
+layer {
+  name: "combine_A"
+  type: "Input"
+  top: "combine_A"
+  input_param {shape: {dim: 64 dim: 4096 dim: 1 dim: 1}
+  }
+}
+layer {
+  name: "combine_P"
+  type: "Input"
+  top: "combine_P"
+  input_param {shape: {dim: 64 dim: 4096 dim: 1 dim: 1}
+  }
+}
+################## eof data layers ##################
+
+################## concat two groups ##################
+layer {
+  bottom: "combine_A"
+  bottom: "combine_P"
+  top: "concat_vector"
+  name: "concat_vector"
+  type: "Concat"
+  concat_param {
+    axis: 1
+  }
+}
+################## eof concat two groups ##################
+
+################## classification network ##################
+layer {
+  bottom: "concat_vector"
+  top: "classifier/fc0"
+  name: "classifier/fc0"
+  type: "InnerProduct"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  inner_product_param {
+    num_output: 1024
+    weight_filler {
+      type : "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type : "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  bottom: "classifier/fc0"
+  top: "classifier/fc0"
+  name: "classifier/fc0_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "classifier/fc0"
+  top: "classifier/fc1"
+  name: "classifier/fc1"
+  type: "InnerProduct"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  inner_product_param {
+    num_output: 512
+    weight_filler {
+      type : "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  bottom: "classifier/fc1"
+  top: "classifier/fc1"
+  name: "classifier/fc1_relu"
+  type: "ReLU"
+}
+layer {
+  bottom: "classifier/fc1"
+  top: "classifier/fc2"
+  name: "classifier/fc2"
+  type: "InnerProduct"
+  param { lr_mult: 1.0 }
+  param { lr_mult: 2.0 }
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type : "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  bottom : "classifier/fc2"
+  top: "softmax"
+  type: "Softmax"
+  name : "softmax"
+}
+################## eof classification network ##################
