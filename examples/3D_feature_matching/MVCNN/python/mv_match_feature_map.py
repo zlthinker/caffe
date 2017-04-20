@@ -58,10 +58,30 @@ if __name__ == '__main__':
     feature_map_P = net.blobs['combine_P'].data[0, :, :, :]
 
     # normalization
-    min = min(feature_map_A.min(), feature_map_P.min())
-    max = max(feature_map_A.max(), feature_map_P.max())
-    feature_map_A = (feature_map_A - min) / (max - min)
-    feature_map_P = (feature_map_P - min) / (max - min)
+    # print feature_map_A[0].min(), feature_map_A[0].max()
+    # print feature_map_A[1].min(), feature_map_A[1].max()
+    # print feature_map_A[0]
+    # print feature_map_A[1]
+    # min = min(feature_map_A.min(), feature_map_P.min())
+    # max = max(feature_map_A.max(), feature_map_P.max())
+    # feature_map_A = (feature_map_A - feature_map_A.min()) / (feature_map_A.max() - feature_map_A.min())
+    # feature_map_P = (feature_map_P - feature_map_P.min()) / (feature_map_P.max() - feature_map_P.min())
+    # print feature_map_A[0]
+    # print feature_map_P[0]
+    for c in range(feature_map_A.shape[0]):
+        min_A = feature_map_A[c].min()
+        max_A = feature_map_A[c].max()
+        min_P = feature_map_A[c].min()
+        max_P = feature_map_A[c].max()
+        interval_A = max_A - min_A
+        interval_P = max_P - min_P
+        if interval_A == 0:
+            interval_A = 1
+        if interval_P == 0:
+            interval_P = 1
+        feature_map_A[c] = (feature_map_A[c] - min_A) / interval_A
+        feature_map_P[c] = (feature_map_P[c] - min_P) / interval_P
+
     plt.figure(1)
     cu.visSquare(feature_map_A, feature_map_A.min(), feature_map_A.max())
     plt.figure(2)
@@ -75,6 +95,5 @@ if __name__ == '__main__':
     origin_P3 = caffe.io.load_image(args.img_P3)
     imgs_A = [origin_A1, origin_A2, origin_A3]
     imgs_P = [origin_P1, origin_P2, origin_P3]
-    plt.figure(2)
     cu.visMVMatchPair(imgs_A, imgs_P, "", "", "", save=False)
     plt.show()

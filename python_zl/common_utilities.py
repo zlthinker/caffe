@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import nms
+import re
 
 #how to use it:
 #sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
@@ -45,7 +46,7 @@ def readFileList(filepath, file_num, label_num):
 	label_list_list = []
 	with open(filepath) as file:
 		for line in file:
-			elements = line.strip().split(' ')
+			elements = filter(None, re.split("[ \t]+", line.strip()))
 			if file_num + label_num != len(elements):
 				raise Exception("Inconsistent number of elements!")
 			file_list = []
@@ -59,7 +60,7 @@ def readFileList(filepath, file_num, label_num):
 			label_list_list.append(label_list)
 	return file_list_list, label_list_list
 
-def readFilePathList(filepath):
+def readFileListNoLabel(filepath):
 	file_list_list = []
 	with open(filepath) as file:
 		for line in file:
@@ -74,7 +75,7 @@ def loadImageByCaffe(image_path, transformer, color):
 	transformed_image = transformer.preprocess('data', img)
 	return transformed_image
 
-def visSquare(data, min, max):
+def visSquare(data, min=0, max=1):
 	"""Take an array of shape (n, height, width) or (n, height, width, 3)
 	   and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)"""
 	
@@ -223,3 +224,9 @@ def getAverageMaxMin(mat):
 			sum = sum + val
 	ave = sum / (shape[0] * shape[1])
 	return ave, max, min
+
+def parseTrackId(file_path):
+    filename = os.path.basename(file_path)
+    baldname = os.path.splitext(filename)[0]
+    track_id = int(baldname.split('_')[0])
+    return track_id

@@ -8,12 +8,6 @@ import time
 sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
 import common_utilities as cu
 
-def parseTrackId(file_path):
-	filename = os.path.basename(file_path)
-	baldname = os.path.splitext(filename)[0]
-	track_id = int(baldname.split('_')[0])
-	return track_id
-
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='encode 3D features')
 	parser.add_argument('proto', help='network prototxt')
@@ -27,6 +21,8 @@ if __name__ == '__main__':
 	parser.add_argument('--image_num', type=int, default=3, help='image num')
 	parser.add_argument('--label_num', type=int, default=0, help='label num')
 	parser.add_argument('--dim', type=int, default=512, help='feature dimension')
+	parser.add_argument('--normalize', help='normalize activations within channel', action='store_true')
+	parser.set_defaults(normalize=False)
 	args = parser.parse_args()
 
 	if not os.path.isfile(args.model):
@@ -66,12 +62,22 @@ if __name__ == '__main__':
 		net.blobs['data_A2'].data[0, :, :, :] = img_A2
 		net.blobs['data_A3'].data[0, :, :, :] = img_A3
 		output = net.forward()
-		out_des = output['descriptor_pooling'][:, :, 0, 0]
-		index = parseTrackId(files[0])
-		des = out_des[0]
+		# out_des = output['combine_A'][0, :, :, :]
+		out_des = net.blobs['combine_A'].data[0, :, :, :]
+		index = cu.parseTrackId(files[0])
+		if args.normalize:
+			for c in range(out_des.shape[0]):
+				min = out_des[c].min()
+				max = out_des[c].max()
+				interval = max -min
+				if interval == 0:
+					interval = 1
+				out_des[c] = (out_des[c] - min) / interval
+		des = out_des.flatten()
 		des = np.insert(des, 0, np.float32(index))
 		descriptors[i, :] = des
 
+		
 	# for i in range(test_num):
 	# 	for b in range(i, min(i+batch_size, test_num)):
 	# 		files = file_list[b]
@@ -94,7 +100,7 @@ if __name__ == '__main__':
 	timing_info.append(('Encode 3D feature descriptors #' + str(test_num), time.time() - time_start))
 
 	save_start = time.time()
-	save_path = "descriptors.npy"
+	save_path = "descriptors_"+str(dim)+".npy"
 	save_path = os.path.join(args.output_folder, save_path)
 	with open(save_path, 'w') as f_out:
 		np.save(f_out, descriptors)
