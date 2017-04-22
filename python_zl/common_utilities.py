@@ -5,6 +5,7 @@ import numpy as np
 import math
 import nms
 import re
+from enum import Enum
 
 #how to use it:
 #sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
@@ -230,3 +231,7 @@ def parseTrackId(file_path):
     baldname = os.path.splitext(filename)[0]
     track_id = int(baldname.split('_')[0])
     return track_id
+
+class Rescale(Enum):
+    MinMax = 1
+    L2Norm = 2

@@ -21,6 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('img_P3')
     parser.add_argument('--cpu', dest='cpu_mode', help='Use cpu mode', action='store_true')
     parser.set_defaults(cpu_mode=False)
+    parser.add_argument('--rescale', help='rescale activations within channel', action='store_true')
+    parser.set_defaults(rescale=False)
     args = parser.parse_args()
 
     if not os.path.isfile(args.model):
@@ -51,9 +53,6 @@ if __name__ == '__main__':
     net.blobs['data_P2'].data[...] = img_P2
     net.blobs['data_P3'].data[...] = img_P3
     output = net.forward()
-    # feature_map_A1 = net.blobs['A1/pool4'].data[0, :, :, :]
-    # feature_map_A2 = net.blobs['A2/pool4'].data[0, :, :, :]
-    # feature_map_A3 = net.blobs['A3/pool4'].data[0, :, :, :]
     feature_map_A = net.blobs['combine_A'].data[0, :, :, :]
     feature_map_P = net.blobs['combine_P'].data[0, :, :, :]
 
@@ -68,20 +67,23 @@ if __name__ == '__main__':
     # feature_map_P = (feature_map_P - feature_map_P.min()) / (feature_map_P.max() - feature_map_P.min())
     # print feature_map_A[0]
     # print feature_map_P[0]
-    for c in range(feature_map_A.shape[0]):
-        min_A = feature_map_A[c].min()
-        max_A = feature_map_A[c].max()
-        min_P = feature_map_A[c].min()
-        max_P = feature_map_A[c].max()
-        interval_A = max_A - min_A
-        interval_P = max_P - min_P
-        if interval_A == 0:
-            interval_A = 1
-        if interval_P == 0:
-            interval_P = 1
-        feature_map_A[c] = (feature_map_A[c] - min_A) / interval_A
-        feature_map_P[c] = (feature_map_P[c] - min_P) / interval_P
+    if args.rescale:
+        for c in range(feature_map_A.shape[0]):
+            min_A = feature_map_A[c].min()
+            max_A = feature_map_A[c].max()
+            min_P = feature_map_P[c].min()
+            max_P = feature_map_P[c].max()
+            interval_A = max_A - min_A
+            interval_P = max_P - min_P
+            if interval_A == 0:
+                interval_A = 1
+            if interval_P == 0:
+                interval_P = 1
+            feature_map_A[c] = (feature_map_A[c] - min_A) / interval_A
+            feature_map_P[c] = (feature_map_P[c] - min_P) / interval_P
 
+    print feature_map_A.min(), feature_map_A.max()
+    print feature_map_P.min(), feature_map_P.max()
     plt.figure(1)
     cu.visSquare(feature_map_A, feature_map_A.min(), feature_map_A.max())
     plt.figure(2)

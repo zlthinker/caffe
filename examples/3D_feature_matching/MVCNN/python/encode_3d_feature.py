@@ -21,8 +21,8 @@ if __name__ == '__main__':
 	parser.add_argument('--image_num', type=int, default=3, help='image num')
 	parser.add_argument('--label_num', type=int, default=0, help='label num')
 	parser.add_argument('--dim', type=int, default=512, help='feature dimension')
-	parser.add_argument('--normalize', help='normalize activations within channel', action='store_true')
-	parser.set_defaults(normalize=False)
+	parser.add_argument('--rescale', help='rescale activations within channel', action='store_true')
+	parser.set_defaults(rescale=False)
 	args = parser.parse_args()
 
 	if not os.path.isfile(args.model):
@@ -52,6 +52,8 @@ if __name__ == '__main__':
 
 	time_start = time.time()
 	descriptors = np.empty((test_num, dim+1), np.float32)
+	rescale_method = Rescale.L2Norm
+	print 'Current rescale method is', rescale_method
 
 	for i in range(test_num):
 		files = file_list[i]
@@ -65,14 +67,22 @@ if __name__ == '__main__':
 		# out_des = output['combine_A'][0, :, :, :]
 		out_des = net.blobs['combine_A'].data[0, :, :, :]
 		index = cu.parseTrackId(files[0])
-		if args.normalize:
-			for c in range(out_des.shape[0]):
-				min = out_des[c].min()
-				max = out_des[c].max()
-				interval = max -min
-				if interval == 0:
-					interval = 1
-				out_des[c] = (out_des[c] - min) / interval
+		if args.rescale:
+			if rescale_method == cu.Rescale.MinMax:
+				for c in range(out_des.shape[0]):
+					min = out_des[c].min()
+					max = out_des[c].max()
+					interval = max -min
+					if interval == 0:
+						interval = 1
+					out_des[c] = (out_des[c] - min) / interval
+			elif rescale_method == cu.Rescale.L2Norm:
+				for c in range(out_des.shape[0]):
+					des_square = np.square(out_des[c])
+					norm = math.sqrt(np.sum(des_square))
+					if norm == 0:
+						norm = 1
+					out_des[c] = out_des[c] / norm
 		des = out_des.flatten()
 		des = np.insert(des, 0, np.float32(index))
 		descriptors[i, :] = des
