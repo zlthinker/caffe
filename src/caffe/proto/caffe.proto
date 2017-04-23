@@ -436,6 +436,9 @@ message LayerParameter {
   optional TransposeParameter transpose_param = 159;
   // added by zixin - 13/02/2017
   optional TripletLossParameter triplet_loss_param = 160;
+  // added by zl - 20/04/2017
+  optional MinMaxParameter min_max_param = 200;
+
 }
 
 // Message that stores parameters used to apply transformation
@@ -1599,4 +1602,15 @@ message TripletLossParameter {
   //
   // a very simple trick to do hard negative mining.
   optional bool intriplet_mining = 2 [default = false];
+}
+
+// added by zl - 20/04/2017
+message MinMaxParameter {
+  // Specify the minimum difference between max and min 
+  // below which rescaling will not be executed for numerical stability
+  // It must be larger than 0 but smaller than 1
+  required float delta = 1;
+  // This parameter can be set to true to perform min-max rescaling involving all channels
+  optional bool across_channels = 2 [default = false];
+
 }
