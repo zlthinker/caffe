@@ -109,7 +109,7 @@ void MinMaxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             Dtype gap_val = this->gap_.cpu_data()[n * channel + c];
             int index = (n * channel + c) * dim;
             // y = a*X + y
-            caffe_axpy(dim, gap_val, top_diff + index, bottom_diff + index);
+            caffe_axpy(dim, 1.0 / gap_val, top_diff + index, bottom_diff + index);
         }
     }
 }

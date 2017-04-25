@@ -27,7 +27,7 @@ __global__ void RescaleBackward(const int nthreads,
     CUDA_KERNEL_LOOP(index, nthreads) {
         int channel_id = index / dim;
         Dtype gap_val = gap[channel_id];
-        bottom_diff[index] = top_diff[index] * gap_val;
+        bottom_diff[index] = top_diff[index] / gap_val;
     }
 }
 
