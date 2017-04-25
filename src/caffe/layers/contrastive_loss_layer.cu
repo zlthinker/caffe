@@ -30,12 +30,15 @@ void ContrastiveLossLayer<Dtype>::Forward_gpu(
       Dtype(0.0),
       dist_sq_.mutable_gpu_data());  // \Sum (a_i-b_i)^2
   Dtype margin = this->layer_param_.contrastive_loss_param().margin();
+  Dtype margin_simi = this->layer_param_.contrastive_loss_param().margin_simi();
   bool legacy_version =
       this->layer_param_.contrastive_loss_param().legacy_version();
   Dtype loss(0.0);
   for (int i = 0; i < bottom[0]->num(); ++i) {
     if (static_cast<int>(bottom[2]->cpu_data()[i])) {  // similar pairs
-      loss += dist_sq_.cpu_data()[i];
+      Dtype dist = std::max(sqrt(dist_sq_.cpu_data()[i]) - margin_simi,
+                              Dtype(0.0));
+      loss += dist*dist;
     } else {  // dissimilar pairs
       if (legacy_version) {
         loss += std::max(margin - dist_sq_.cpu_data()[i], Dtype(0.0));
@@ -52,31 +55,35 @@ void ContrastiveLossLayer<Dtype>::Forward_gpu(
 
 template <typename Dtype>
 __global__ void CLLBackward(const int count, const int channels,
-    const Dtype margin, const bool legacy_version, const Dtype alpha,
-    const Dtype* y, const Dtype* diff, const Dtype* dist_sq,
-    Dtype *bottom_diff) {
-  CUDA_KERNEL_LOOP(i, count) {
-    int n = i / channels;  // the num index, to access y and dist_sq
-    if (static_cast<int>(y[n])) {  // similar pairs
-      bottom_diff[i] = alpha * diff[i];
-    } else {  // dissimilar pairs
-      Dtype mdist(0.0);
-      Dtype beta(0.0);
-      if (legacy_version) {
-        mdist = (margin - dist_sq[n]);
-        beta = -alpha;
-      } else {
-        Dtype dist = sqrt(dist_sq[n]);
-        mdist = (margin - dist);
-        beta = -alpha * mdist / (dist + Dtype(1e-4)) * diff[i];
-      }
-      if (mdist > 0.0) {
-        bottom_diff[i] = beta;
-      } else {
-        bottom_diff[i] = 0;
-      }
+                            const Dtype margin, const Dtype margin_simi,
+                            const bool legacy_version, const Dtype alpha,
+                            const Dtype* y, const Dtype* diff, const Dtype* dist_sq,
+                            Dtype *bottom_diff) {
+    CUDA_KERNEL_LOOP(i, count) {
+        int n = i / channels;  // the num index, to access y and dist_sq
+        if (static_cast<int>(y[n])) {  // similar pairs
+            Dtype dist = sqrt(dist_sq[n]);
+            Dtype mdist = dist - margin_simi;
+            Dtype beta = alpha * mdist / (dist + Dtype(1e-4)) * diff[i];
+            bottom_diff[i] = (mdist > 0) ? beta : 0;
+        } else {  // dissimilar pairs
+            Dtype mdist(0.0);
+            Dtype beta(0.0);
+            if (legacy_version) {
+                mdist = (margin - dist_sq[n]);
+                beta = -alpha;
+            } else {
+                Dtype dist = sqrt(dist_sq[n]);
+                mdist = (margin - dist);
+                beta = -alpha * mdist / (dist + Dtype(1e-4)) * diff[i];
+            }
+            if (mdist > 0.0) {
+                bottom_diff[i] = beta;
+            } else {
+                bottom_diff[i] = 0;
+            }
+        }
     }
-  }
 }
 
 template <typename Dtype>
@@ -87,6 +94,7 @@ void ContrastiveLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const int count = bottom[0]->count();
       const int channels = bottom[0]->channels();
       Dtype margin = this->layer_param_.contrastive_loss_param().margin();
+      Dtype margin_simi = this->layer_param_.contrastive_loss_param().margin_simi();
       const bool legacy_version =
           this->layer_param_.contrastive_loss_param().legacy_version();
       const Dtype sign = (i == 0) ? 1 : -1;
@@ -94,7 +102,7 @@ void ContrastiveLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
           static_cast<Dtype>(bottom[0]->num());
       // NOLINT_NEXT_LINE(whitespace/operators)
       CLLBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-          count, channels, margin, legacy_version, alpha,
+          count, channels, margin, margin_simi, legacy_version, alpha,
           bottom[2]->gpu_data(),  // pair similarity 0 or 1
           diff_.gpu_data(),  // the cached eltwise difference between a and b
           dist_sq_.gpu_data(),  // the cached square distance between a and b

@@ -591,6 +591,8 @@ message ContrastiveLossParameter {
   // legacy_version = true uses (margin - d^2). This is kept to support /
   // reproduce existing models and results
   optional bool legacy_version = 2 [default = false];
+  // margin for similar pair
+  optional float margin_simi = 3 [default = 0];
 }
 
 message ConvolutionParameter {
