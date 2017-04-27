@@ -52,8 +52,9 @@ if __name__ == '__main__':
 
 	time_start = time.time()
 	descriptors = np.empty((test_num, dim+1), np.float32)
-	rescale_method = Rescale.L2Norm
-	print 'Current rescale method is', rescale_method
+	rescale_method = cu.Rescale.L2Norm
+	if args.rescale:
+		print 'Current rescale method is', rescale_method
 
 	for i in range(test_num):
 		files = file_list[i]
@@ -65,7 +66,7 @@ if __name__ == '__main__':
 		net.blobs['data_A3'].data[0, :, :, :] = img_A3
 		output = net.forward()
 		# out_des = output['combine_A'][0, :, :, :]
-		out_des = net.blobs['combine_A'].data[0, :, :, :]
+		out_des = net.blobs['norm_A'].data[0, :, :, :]
 		index = cu.parseTrackId(files[0])
 		if args.rescale:
 			if rescale_method == cu.Rescale.MinMax:

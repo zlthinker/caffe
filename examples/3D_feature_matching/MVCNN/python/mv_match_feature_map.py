@@ -56,38 +56,13 @@ if __name__ == '__main__':
     feature_map_A = net.blobs['combine_A'].data[0, :, :, :]
     feature_map_P = net.blobs['combine_P'].data[0, :, :, :]
 
-    # normalization
-    # print feature_map_A[0].min(), feature_map_A[0].max()
-    # print feature_map_A[1].min(), feature_map_A[1].max()
-    # print feature_map_A[0]
-    # print feature_map_A[1]
-    # min = min(feature_map_A.min(), feature_map_P.min())
-    # max = max(feature_map_A.max(), feature_map_P.max())
-    # feature_map_A = (feature_map_A - feature_map_A.min()) / (feature_map_A.max() - feature_map_A.min())
-    # feature_map_P = (feature_map_P - feature_map_P.min()) / (feature_map_P.max() - feature_map_P.min())
-    # print feature_map_A[0]
-    # print feature_map_P[0]
-    if args.rescale:
-        for c in range(feature_map_A.shape[0]):
-            min_A = feature_map_A[c].min()
-            max_A = feature_map_A[c].max()
-            min_P = feature_map_P[c].min()
-            max_P = feature_map_P[c].max()
-            interval_A = max_A - min_A
-            interval_P = max_P - min_P
-            if interval_A == 0:
-                interval_A = 1
-            if interval_P == 0:
-                interval_P = 1
-            feature_map_A[c] = (feature_map_A[c] - min_A) / interval_A
-            feature_map_P[c] = (feature_map_P[c] - min_P) / interval_P
-
     print feature_map_A.min(), feature_map_A.max()
     print feature_map_P.min(), feature_map_P.max()
+    print feature_map_A
     plt.figure(1)
-    cu.visSquare(feature_map_A, feature_map_A.min(), feature_map_A.max())
+    cu.visSquare(feature_map_A, cu.Rescale.MinMax)
     plt.figure(2)
-    cu.visSquare(feature_map_P, feature_map_P.min(), feature_map_P.max())
+    cu.visSquare(feature_map_P, cu.Rescale.MinMax)
 
     origin_A1 = caffe.io.load_image(args.img_A1)
     origin_A2 = caffe.io.load_image(args.img_A2)
