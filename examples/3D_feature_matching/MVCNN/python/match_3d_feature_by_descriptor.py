@@ -19,78 +19,95 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	min_ratio = args.min_ratio
-
 	repre1 = np.load(args.des_file1)
 	repre2 = np.load(args.des_file2)
 	descriptors1 = np.delete(repre1, 0, 1)	# erase id
 	descriptors2 = np.delete(repre2, 0, 1)
+
 	save_path = "match_pairs.txt"
 	save_path = os.path.join(args.output_folder, save_path)
 	f_out = open(save_path, 'w')
 
-	pos_save_path = "pos_match_pairs.txt"
-	pos_save_path = os.path.join(args.output_folder, pos_save_path)
-	f_pos = open(pos_save_path, 'w')
-
-	neg_save_path = "neg_match_pairs.txt"
-	neg_save_path = os.path.join(args.output_folder, neg_save_path)
-	f_neg = open(neg_save_path, 'w')
+	dist_save_path = 'distances.npy'
+	dist_save_path = os.path.join(args.output_folder, dist_save_path)
 
 	timing_info = []
-
 	time_start = time.time()
-	test_num = args.test_num
-	if test_num == -1:
-		test_num = descriptors1.shape[0]
-	test_num = min(test_num, descriptors1.shape[0])
-	print 'Feature number: ', descriptors1.shape[0], descriptors2.shape[0]
-	start = min(args.start, test_num)
 
-	num_true_pos = 0
-	for i in range(start, test_num, 1):
-		des1 = descriptors1[i]
-		id1 = int(repre1[i][0])
-		des1_tile = np.tile(des1, (descriptors2.shape[0], 1))
-		des_sub = des1_tile - descriptors2
-		des_sub_square = np.square(des_sub)
-		distances = np.sum(des_sub_square, axis=1)
+	if not os.path.exists(dist_save_path):
+		pos_save_path = "pos_match_pairs.txt"
+		pos_save_path = os.path.join(args.output_folder, pos_save_path)
+		f_pos = open(pos_save_path, 'w')
+		neg_save_path = "neg_match_pairs.txt"
+		neg_save_path = os.path.join(args.output_folder, neg_save_path)
+		f_neg = open(neg_save_path, 'w')
 
-		min_dist = sys.float_info.max
-		min_id = -1
-		sec_min_dist = sys.float_info.max
-		sec_min_id = -1
-		for j in range(descriptors2.shape[0]):
-			dist = distances[j]
-			id2 = int(repre2[j][0])
-			# print i, j, dist
+		test_num = args.test_num
+		if test_num == -1:
+			test_num = descriptors1.shape[0]
+		test_num = min(test_num, descriptors1.shape[0])
+		print 'Feature number: ', descriptors1.shape[0], descriptors2.shape[0]
+		start = min(args.start, test_num)
 
-			if dist < min_dist:
-				sec_min_dist = min_dist
-				sec_min_id = min_id
-				min_dist = dist
-				min_id = id2
-			elif dist < sec_min_dist:
-				sec_min_dist = dist
-				sec_min_id = id2
+		exh_distances = np.zeros(shape=(descriptors1.shape[0], descriptors2.shape[0]))
+		dist_ratios = [1] * descriptors1.shape[0]
 
-		if id1 == min_id:
-			num_true_pos += 1
-		dist_ratio = sec_min_dist / min_dist
-		if dist_ratio > min_ratio:
-			f_out.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + '\n')
-			print '[', i+1, num_true_pos, ']', id1, min_id, min_dist, dist_ratio, '*************'
-		else:
+		num_true_pos = 0
+		for i in range(start, test_num, 1):
+			des1 = descriptors1[i]
+			id1 = int(repre1[i][0])
+			des1_tile = np.tile(des1, (descriptors2.shape[0], 1))
+			des_sub = des1_tile - descriptors2
+			des_sub_square = np.square(des_sub)
+			distances = np.sum(des_sub_square, axis=1)
+			exh_distances[i, :] = distances
+
+			min_dist = distances.min()
+			argmin = np.argmin(distances)
+			new_distances = np.delete(distances, [argmin])
+			sec_min_dist = new_distances.min()
+
+			min_id = int(repre2[argmin][0])
+
+			if id1 == min_id:
+				num_true_pos += 1
+			dist_ratio = sec_min_dist / min_dist
+			dist_ratios[i] = dist_ratio
+
 			print '[', i+1, num_true_pos, ']', id1, min_id, min_dist, dist_ratio
-		if id1 == min_id:
-		# 	print 'Closet pair: ', id1, min_id, min_dist, dist_ratio, '******'
-			f_pos.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + ' ' + str(dist_ratio) + '\n')
-		else:
-		# 	print 'Closet pair: ', id1, min_id, min_dist, dist_ratio
-			f_neg.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + ' ' + str(dist_ratio) + '\n')
+			if id1 == min_id:
+			# 	print 'Closet pair: ', id1, min_id, min_dist, dist_ratio, '******'
+				f_pos.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + ' ' + str(dist_ratio) + '\n')
+			else:
+			# 	print 'Closet pair: ', id1, min_id, min_dist, dist_ratio
+				f_neg.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + ' ' + str(dist_ratio) + '\n')
+		f_pos.close()
+		f_neg.close()
+		with open(dist_save_path, 'w') as f_dist:
+			np.save(f_dist, exh_distances)
 
-	f_out.close()
-	f_pos.close()
-	f_neg.close()
+	print 'Load distance file:', dist_save_path
+	exh_distances = np.load(dist_save_path)
+	argmins1 = np.argmin(exh_distances, axis=1)	#min id of each row
+	argmins2 = np.argmin(exh_distances, axis=0) #min id of each col
+
+
+	for i in range(descriptors1.shape[0]):
+		argmin1 = argmins1[i]
+		argmin2 = argmins2[argmin1]
+
+		min_dist = exh_distances[i].min()
+		new_distances = np.delete(exh_distances[i], [argmin1])
+		sec_min_dist = new_distances.min()
+		ratio = sec_min_dist / min_dist
+
+		if i != argmin2 or ratio < min_ratio:
+			continue
+		id1 = int(repre1[i][0])
+		id2 = int(repre2[argmin1][0])
+		f_out.write(str(id1) + ' ' + str(id2) + ' ' + str(ratio) + '\n')
+
+
 	timing_info.append(('Match 3D feature descriptors', time.time() - time_start))
 	cu.PrintRunningTime(timing_info)
 

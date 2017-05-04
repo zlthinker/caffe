@@ -11,6 +11,11 @@ from enum import Enum
 #sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
 #import common_utilities as cu
 
+class Rescale(Enum):
+	MinMax = 1
+	L2Norm = 2
+	Tanh = 3
+
 def PrintRunningTime(timing_info):
 	print('------------------------------')
 	total_time = 0
@@ -40,7 +45,7 @@ def L2distance(vector1, vector2, normalize=True):
 			dist = dist + math.pow((vector1[i]/norm1 - vector2[i]/norm2), 2)
 		else:
 			dist = dist + math.pow((vector1[i] - vector2[i]), 2)
-	return dist / 2.0
+	return math.sqrt(dist)
 
 def readFileList(filepath, file_num, label_num):
 	file_list_list = []
@@ -76,12 +81,16 @@ def loadImageByCaffe(image_path, transformer, color):
 	transformed_image = transformer.preprocess('data', img)
 	return transformed_image
 
-def visSquare(data, min=0, max=1):
+def visSquare(data, rescale=Rescale.MinMax):
 	"""Take an array of shape (n, height, width) or (n, height, width, 3)
 	   and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)"""
 	
-	# normalize data for display
-	data = (data - min) / (max - min)
+	# rescale data to 0~1
+	for i in range(data.shape[0]):
+		if rescale == Rescale.MinMax:
+			data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
+		elif rescale == Rescale.Tanh:
+			data[i] = (np.tanh(data[i]) + 1) / 2
 	
 	# force the number of filters to be square
 	n = int(np.ceil(np.sqrt(data.shape[0])))
@@ -93,7 +102,8 @@ def visSquare(data, min=0, max=1):
 	# tile the filters into an image
 	data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
 	data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
-	
+	if data.shape[2] == 1:	# single channel
+		data = data[:, :, 0]
 	plt.imshow(data); plt.axis('off')
 
 def visMatchNetPair(img1, img2, label, save_path, save=True):
@@ -227,11 +237,8 @@ def getAverageMaxMin(mat):
 	return ave, max, min
 
 def parseTrackId(file_path):
-    filename = os.path.basename(file_path)
-    baldname = os.path.splitext(filename)[0]
-    track_id = int(baldname.split('_')[0])
-    return track_id
+	filename = os.path.basename(file_path)
+	baldname = os.path.splitext(filename)[0]
+	track_id = int(baldname.split('_')[0])
+	return track_id
 
-class Rescale(Enum):
-    MinMax = 1
-    L2Norm = 2
