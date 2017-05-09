@@ -19,8 +19,8 @@ if __name__ == '__main__':
 	parser.add_argument('--test_num', type=int, default=200, help='test num')
 	parser.add_argument('--shuffle', action='store_true')
 	parser.set_defaults(shuffle=False)
-	parser.add_argument('--margin', type=float, default=0.3, help='margin for negative pair')
-	parser.add_argument('--margin_simi', type=float, default=0.2, help='margin for positive pair')
+	parser.add_argument('--margin', type=float, default=0.5, help='margin for negative pair')
+	parser.add_argument('--margin_simi', type=float, default=0.1, help='margin for positive pair')
 	args = parser.parse_args()
 
 	if not os.path.isfile(args.model):
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 		origin_P3 = caffe.io.load_image(files[5])
 		imgs_A = [origin_A1, origin_A2, origin_A3]
 		imgs_P = [origin_P1, origin_P2, origin_P3]
-		save_path = str(i)+'.jpg'
+		save_path = str(i)+'_'+str(id)+'.jpg'
 		save_path = os.path.join(args.output_folder, save_path)
 		cu.visMVMatchPair(imgs_A, imgs_P, dist, gt_label, save_path)
 		# print '[', i, ']', save_path

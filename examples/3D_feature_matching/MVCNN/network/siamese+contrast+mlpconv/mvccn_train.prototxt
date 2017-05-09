@@ -7,11 +7,12 @@ layer {
     top: "merged_data"
     top: "label"
     flexible_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/SFZ/data/training_data/siamese_contrast/siamese_contrast_patch_list_train.txt"
-        batch_size: 60
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/data/training_data/siamese_contrast/multiview_patch_list_train.txt"
+        batch_size: 64
         is_color: false
         img_num: 6
         label_num: 1
+        shuffle: true
     }
     transform_param {
       mean_value: 128
@@ -27,7 +28,7 @@ layer {
     top: "merged_data"
     top: "label"
     flexible_image_data_param {
-        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/SFZ/data/training_data/siamese_contrast/siamese_contrast_patch_list_test.txt"
+        source: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/data/3d_feature_matching/data/training_data/siamese_contrast/multiview_patch_list_test.txt"
         batch_size: 64
         is_color: false
         img_num: 6
@@ -1254,10 +1255,10 @@ layer {
   name: "loss"
   type: "ContrastiveLoss"
   contrastive_loss_param {
-    margin: 0.3
-    margin_simi: 0.2
+    margin: 0.5
+    margin_simi: 0.1
   }
-  loss_weight: 10000
+  loss_weight: 1000
 }
 ################## eof loss network ##################
 

@@ -120,3 +120,13 @@ if __name__ == '__main__':
 
 	cu.PrintRunningTime(timing_info)
 	print 'Average time is ', (time.time() - time_start) / float(test_num)
+
+	# des_path = "descriptors_"+str(dim)+".txt"
+	# des_path = os.path.join(args.output_folder, des_path)
+	# with open(des_path, 'w') as f_des:
+	# 	for i in range(descriptors.shape[0]):
+	# 		des = descriptors[i]
+	# 		f_des.write(str(int(des[0]))+' ')
+	# 		for j in des[1:]:
+	# 			f_des.write(str(j)+' ')
+	# 		f_des.write('\n')

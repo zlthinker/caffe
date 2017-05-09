@@ -54,6 +54,7 @@ def readFileList(filepath, file_num, label_num):
 		for line in file:
 			elements = filter(None, re.split("[ \t]+", line.strip()))
 			if file_num + label_num != len(elements):
+				print line
 				raise Exception("Inconsistent number of elements!")
 			file_list = []
 			label_list = []
@@ -86,11 +87,12 @@ def visSquare(data, rescale=Rescale.MinMax):
 	   and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)"""
 	
 	# rescale data to 0~1
-	for i in range(data.shape[0]):
-		if rescale == Rescale.MinMax:
-			data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
-		elif rescale == Rescale.Tanh:
-			data[i] = (np.tanh(data[i]) + 1) / 2
+	# for i in range(data.shape[0]):
+	# 	if rescale == Rescale.MinMax:
+	# 		data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
+	# 	elif rescale == Rescale.Tanh:
+	# 		data[i] = (np.tanh(data[i]) + 1) / 2
+	data = (data - data.min()) / (data.max() - data.min())
 	
 	# force the number of filters to be square
 	n = int(np.ceil(np.sqrt(data.shape[0])))
@@ -102,7 +104,7 @@ def visSquare(data, rescale=Rescale.MinMax):
 	# tile the filters into an image
 	data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
 	data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
-	if data.shape[2] == 1:	# single channel
+	if len(data.shape) > 2 and data.shape[2] == 1:	# single channel
 		data = data[:, :, 0]
 	plt.imshow(data); plt.axis('off')
 
