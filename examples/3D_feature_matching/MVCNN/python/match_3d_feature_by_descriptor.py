@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import time
+from scipy.spatial.distance import cdist
 sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
 import common_utilities as cu
 
@@ -16,6 +17,7 @@ if __name__ == '__main__':
 	parser.add_argument('--test_num', type=int, default=-1, help='test num')
 	parser.add_argument('--start', type=int, default=0, help='start of feature idx')
 	parser.add_argument('--min_ratio', type=float, default=1.5, help='threshold for ratio test')
+	parser.add_argument('--save', default=False, help='threshold for ratio test', action='store_true')
 	args = parser.parse_args()
 
 	min_ratio = args.min_ratio
@@ -34,7 +36,27 @@ if __name__ == '__main__':
 	timing_info = []
 	time_start = time.time()
 
-	if not os.path.exists(dist_save_path):
+	if os.path.exists(dist_save_path):
+		print 'Load distance file:', dist_save_path
+		exh_distances = np.load(dist_save_path)
+		argmins1 = np.argmin(exh_distances, axis=1)	#min id of each row
+		argmins2 = np.argmin(exh_distances, axis=0) #min id of each col
+
+		for i in range(descriptors1.shape[0]):
+			argmin1 = argmins1[i]
+			argmin2 = argmins2[argmin1]
+			min_dist = exh_distances[i].min()
+			new_distances = np.delete(exh_distances[i], [argmin1])
+			sec_min_dist = new_distances.min()
+			ratio = sec_min_dist / min_dist
+			if i != argmin2 or ratio < min_ratio:
+				continue
+			id1 = int(repre1[i][0])
+			id2 = int(repre2[argmin1][0])
+			f_out.write(str(id1) + ' ' + str(id2) + '\n')
+			# print id1, id2, ratio
+
+	else:
 		pos_save_path = "pos_match_pairs.txt"
 		pos_save_path = os.path.join(args.output_folder, pos_save_path)
 		f_pos = open(pos_save_path, 'w')
@@ -49,18 +71,16 @@ if __name__ == '__main__':
 		print 'Feature number: ', descriptors1.shape[0], descriptors2.shape[0]
 		start = min(args.start, test_num)
 
-		exh_distances = np.zeros(shape=(descriptors1.shape[0], descriptors2.shape[0]))
-		dist_ratios = [1] * descriptors1.shape[0]
+		metric = "euclidean"
+		print "Computing exhaustive", metric, "distances... "
+		exh_distances = cdist(descriptors1, descriptors2, metric=metric)
+
 
 		num_true_pos = 0
 		for i in range(start, test_num, 1):
 			des1 = descriptors1[i]
 			id1 = int(repre1[i][0])
-			des1_tile = np.tile(des1, (descriptors2.shape[0], 1))
-			des_sub = des1_tile - descriptors2
-			des_sub_square = np.square(des_sub)
-			distances = np.sum(des_sub_square, axis=1)
-			exh_distances[i, :] = distances
+			distances = exh_distances[i, :]
 
 			min_dist = distances.min()
 			argmin = np.argmin(distances)
@@ -72,7 +92,6 @@ if __name__ == '__main__':
 			if id1 == min_id:
 				num_true_pos += 1
 			dist_ratio = sec_min_dist / min_dist
-			dist_ratios[i] = dist_ratio
 
 			print '[', i+1, num_true_pos, ']', id1, min_id, min_dist, dist_ratio
 			if id1 == min_id:
@@ -83,30 +102,9 @@ if __name__ == '__main__':
 				f_neg.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + ' ' + str(dist_ratio) + '\n')
 		f_pos.close()
 		f_neg.close()
-		with open(dist_save_path, 'w') as f_dist:
-			np.save(f_dist, exh_distances)
-
-	print 'Load distance file:', dist_save_path
-	exh_distances = np.load(dist_save_path)
-	argmins1 = np.argmin(exh_distances, axis=1)	#min id of each row
-	argmins2 = np.argmin(exh_distances, axis=0) #min id of each col
-
-
-	for i in range(descriptors1.shape[0]):
-		argmin1 = argmins1[i]
-		argmin2 = argmins2[argmin1]
-
-		min_dist = exh_distances[i].min()
-		new_distances = np.delete(exh_distances[i], [argmin1])
-		sec_min_dist = new_distances.min()
-		ratio = sec_min_dist / min_dist
-
-		if i != argmin2 or ratio < min_ratio:
-			continue
-		id1 = int(repre1[i][0])
-		id2 = int(repre2[argmin1][0])
-		f_out.write(str(id1) + ' ' + str(id2) + ' ' + str(ratio) + '\n')
-
+		if args.save:
+			with open(dist_save_path, 'w') as f_dist:
+				np.save(f_dist, exh_distances)
 
 	timing_info.append(('Match 3D feature descriptors', time.time() - time_start))
 	cu.PrintRunningTime(timing_info)
