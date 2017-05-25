@@ -61,16 +61,15 @@ if __name__ == '__main__':
 		net.blobs['data_P2'].data[...] = img_P2
 		net.blobs['data_P3'].data[...] = img_P3
 		output = net.forward()
-		des_A = output['norm_A'][0, :, 0, 0]
-		des_P = output['norm_P'][0, :, 0, 0]
+		des_A = net.blobs['norm_A'].data[0, :, 0, 0]
+		des_P = net.blobs['norm_P'].data[0, :, 0, 0]
 		dist = cu.L2distance(des_A, des_P)
-		loss = 0
-		if gt_label == 1:
-			loss = 0.5 * math.pow(max(0, dist-args.margin_simi), 2)
-		elif gt_label == 0:
-			loss = 0.5 * math.pow(max(0, args.margin-dist), 2)
-		print '[', i, '], Label =', gt_label, 'Distance =', dist, 'loss =', loss
-		total_loss += loss
+
+		print '[', i, '], Label =', gt_label, '\tDistance =', dist
+		if gt_label == 1 and dist < 0.4:
+			continue
+		if gt_label == 0 and dist > 0.6:
+			continue
 
 		origin_A1 = caffe.io.load_image(files[0])
 		origin_A2 = caffe.io.load_image(files[1])

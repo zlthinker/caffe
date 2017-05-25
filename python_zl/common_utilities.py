@@ -87,12 +87,15 @@ def visSquare(data, rescale=Rescale.MinMax):
 	   and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)"""
 	
 	# rescale data to 0~1
-	# for i in range(data.shape[0]):
-	# 	if rescale == Rescale.MinMax:
-	# 		data[i] = (data[i] - data[i].min()) / (data[i].max() - data[i].min())
-	# 	elif rescale == Rescale.Tanh:
-	# 		data[i] = (np.tanh(data[i]) + 1) / 2
-	data = (data - data.min()) / (data.max() - data.min())
+	for i in range(data.shape[0]):
+		if rescale == Rescale.MinMax:
+			gap = data[i].max() - data[i].min()
+			if gap == 0:
+				gap = 1.0
+			data[i] = (data[i] - data[i].min()) / gap
+		elif rescale == Rescale.Tanh:
+			data[i] = (np.tanh(data[i]) + 1) / 2
+	# data = (data - data.min()) / (data.max() - data.min())
 	
 	# force the number of filters to be square
 	n = int(np.ceil(np.sqrt(data.shape[0])))

@@ -53,8 +53,8 @@ if __name__ == '__main__':
     net.blobs['data_P2'].data[...] = img_P2
     net.blobs['data_P3'].data[...] = img_P3
     output = net.forward()
-    feature_map_A = net.blobs['combine/conv1_A'].data[0, :, :, :]
-    feature_map_P = net.blobs['combine/conv1_P'].data[0, :, :, :]
+    feature_map_A = net.blobs['combine/sum_A'].data[0, :, :, :]
+    feature_map_P = net.blobs['combine/sum_P'].data[0, :, :, :]
     print feature_map_A.shape
     print feature_map_A.min(), feature_map_A.max()
     print feature_map_P.min(), feature_map_P.max()

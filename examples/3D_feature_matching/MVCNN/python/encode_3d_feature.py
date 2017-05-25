@@ -23,6 +23,8 @@ if __name__ == '__main__':
 	parser.add_argument('--dim', type=int, default=512, help='feature dimension')
 	parser.add_argument('--rescale', help='rescale activations within channel', action='store_true')
 	parser.set_defaults(rescale=False)
+	parser.add_argument('--save_txt', help='save descriptors in txt file', action='store_true')
+	parser.set_defaults(rescale=False)
 	args = parser.parse_args()
 
 	if not os.path.isfile(args.model):
@@ -67,6 +69,7 @@ if __name__ == '__main__':
 		output = net.forward()
 		# out_des = net.blobs['combine_A'].data[0, :, :, :]
 		out_des = net.blobs['norm_A'].data[0, :, :, :]
+		# out_des = net.blobs['combine/reshape_A'].data[0, :, :, :]
 		index = cu.parseTrackId(files[0])
 		if args.rescale:
 			if rescale_method == cu.Rescale.MinMax:
@@ -121,12 +124,13 @@ if __name__ == '__main__':
 	cu.PrintRunningTime(timing_info)
 	print 'Average time is ', (time.time() - time_start) / float(test_num)
 
-	# des_path = "descriptors_"+str(dim)+".txt"
-	# des_path = os.path.join(args.output_folder, des_path)
-	# with open(des_path, 'w') as f_des:
-	# 	for i in range(descriptors.shape[0]):
-	# 		des = descriptors[i]
-	# 		f_des.write(str(int(des[0]))+' ')
-	# 		for j in des[1:]:
-	# 			f_des.write(str(j)+' ')
-	# 		f_des.write('\n')
+	if args.save_txt:
+		des_path = "descriptors_"+str(dim)+".txt"
+		des_path = os.path.join(args.output_folder, des_path)
+		with open(des_path, 'w') as f_des:
+			for i in range(descriptors.shape[0]):
+				des = descriptors[i]
+				f_des.write(str(int(des[0]))+' ')
+				for j in des[1:]:
+					f_des.write(str(j)+' ')
+				f_des.write('\n')
