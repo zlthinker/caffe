@@ -6,6 +6,7 @@ import math
 import nms
 import re
 from enum import Enum
+from PIL import Image
 
 #how to use it:
 #sys.path.insert(0, '/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/python_zl/')
@@ -81,6 +82,19 @@ def loadImageByCaffe(image_path, transformer, color):
 	img = (img * 255 - 128) * 0.00625
 	transformed_image = transformer.preprocess('data', img)
 	return transformed_image
+
+def loadImageByPIL(image_path):
+	img = np.array(Image.open(image_path).convert('L'))
+	img = (img - 128) * 0.00625
+	return img
+
+def loadImageByOpenCV(image_path, color):
+	flag = 0
+	if color:
+		flag = 1
+	img = cv2.imread(image_path, flag)
+	img = (img.astype('float') - 128) * 0.00625
+	return img
 
 def visSquare(data, rescale=Rescale.MinMax):
 	"""Take an array of shape (n, height, width) or (n, height, width, 3)

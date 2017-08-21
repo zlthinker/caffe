@@ -8,7 +8,7 @@ test_state: { stage: 'test-on-test' }
 test_initialization: false
 
 # The base learning rate, momentum and the weight decay of the network.
-base_lr: 0.01
+base_lr: 1e-2
 momentum: 0.9
 weight_decay: 0.0005
 
@@ -31,4 +31,4 @@ snapshot_prefix: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengin
 solver_mode: GPU
 
 # threshold to prevent explosion of gradient updates
-#clip_gradients: 200
+clip_gradients: 200

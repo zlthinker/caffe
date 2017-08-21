@@ -62,6 +62,9 @@ if __name__ == '__main__':
 		neg_save_path = "neg_match_pairs.txt"
 		neg_save_path = os.path.join(args.output_folder, neg_save_path)
 		f_neg = open(neg_save_path, 'w')
+		sec_save_path = "sec_match_pairs.txt"
+		sec_save_path = os.path.join(args.output_folder, sec_save_path)
+		f_sec = open(sec_save_path, 'w')
 
 		print 'Feature number: ', descriptors1.shape[0], descriptors2.shape[0]
 
@@ -91,10 +94,13 @@ if __name__ == '__main__':
 
 				min_dist = distances.min()
 				argmin = np.argmin(distances)
+				min_id = int(repre2[argmin][0])
+
 				new_distances = np.delete(distances, [argmin])
 				sec_min_dist = new_distances.min()
-
-				min_id = int(repre2[argmin][0])
+				sec_min_id = np.argmin(new_distances)
+				if sec_min_id >= min_id:
+					sec_min_id += 1
 
 				if id1 == min_id:
 					num_true_pos += 1
@@ -105,6 +111,7 @@ if __name__ == '__main__':
 				print '[', i+1, num_true_pos, ']', id1, min_id, min_dist, dist_ratio
 				if id1 == min_id:
 					f_pos.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + ' ' + str(dist_ratio) + '\n')
+					f_sec.write(str(id1) + ' ' + str(sec_min_id) + ' ' + str(sec_min_dist) + ' 1.0\n')
 				else:
 					f_neg.write(str(id1) + ' ' + str(min_id) + ' ' + str(min_dist) + ' ' + str(dist_ratio) + '\n')
 				
@@ -114,6 +121,7 @@ if __name__ == '__main__':
 
 		f_pos.close()
 		f_neg.close()
+		f_sec.close()
 
 	timing_info.append(('Match 3D feature descriptors', time.time() - time_start))
 	cu.PrintRunningTime(timing_info)

@@ -60,9 +60,13 @@ if __name__ == '__main__':
 
 	for i in range(test_num):
 		files = file_list[i]
-		img_A1 = cu.loadImageByCaffe(files[0], img_transformer, color=False)
-		img_A2 = cu.loadImageByCaffe(files[1], img_transformer, color=False)
-		img_A3 = cu.loadImageByCaffe(files[2], img_transformer, color=False)
+		# img_A1 = cu.loadImageByCaffe(files[0], img_transformer, color=False)
+		# img_A2 = cu.loadImageByCaffe(files[1], img_transformer, color=False)
+		# img_A3 = cu.loadImageByCaffe(files[2], img_transformer, color=False)
+		img_A1 = cu.loadImageByOpenCV(files[0], color=False)
+		img_A2 = cu.loadImageByOpenCV(files[1], color=False)
+		img_A3 = cu.loadImageByOpenCV(files[2], color=False)
+
 		net.blobs['data_A1'].data[0, :, :, :] = img_A1
 		net.blobs['data_A2'].data[0, :, :, :] = img_A2
 		net.blobs['data_A3'].data[0, :, :, :] = img_A3
@@ -111,6 +115,7 @@ if __name__ == '__main__':
 	# 		descriptors[i, :] = des
 		if i % 1000 == 0:
 			print i, 'images encoded.'
+	print test_num, 'images encoded.'
 	timing_info.append(('Encode 3D feature descriptors #' + str(test_num), time.time() - time_start))
 
 	save_start = time.time()

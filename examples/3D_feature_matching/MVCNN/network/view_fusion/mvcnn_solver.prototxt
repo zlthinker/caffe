@@ -1,4 +1,4 @@
-net: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/siamese+contrast+mlpconv/mvccn_train.prototxt"
+net: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/view_fusion/mvccn_train.prototxt"
 
 
 # Carry out testing every 100 training iterations.
@@ -25,7 +25,7 @@ display: 100
 
 # snapshot intermediate results
 snapshot: 5000
-snapshot_prefix: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/siamese+contrast+mlpconv/snapshot/mvcnn"
+snapshot_prefix: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/view_fusion/snapshot/mvcnn"
 
 # solver mode: CPU or GPU
 solver_mode: GPU

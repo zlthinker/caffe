@@ -1,4 +1,4 @@
-net: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/siamese+contrast+mlpconv/mvccn_train.prototxt"
+net: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/resnet_128/mvccn_train.prototxt"
 
 
 # Carry out testing every 100 training iterations.
@@ -8,7 +8,7 @@ test_state: { stage: 'test-on-test' }
 test_initialization: false
 
 # The base learning rate, momentum and the weight decay of the network.
-base_lr: 1e-6
+base_lr: 6e-5
 momentum: 0.9
 weight_decay: 0.0005
 
@@ -18,14 +18,14 @@ gamma: 0.1
 #stepvalue: 1000
 
 # The maximum number of iterations
-max_iter: 1000000
+max_iter: 650000
 
 # Display every 100 iterations
 display: 100
 
 # snapshot intermediate results
-snapshot: 5000
-snapshot_prefix: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/siamese+contrast+mlpconv/snapshot/mvcnn"
+snapshot: 10000
+snapshot_prefix: "/run/media/larry/fafb882a-0878-4e0a-9ccb-2fb979b7f717/e3dengine/caffe/examples/3D_feature_matching/MVCNN/network/resnet_128/snapshot/mvcnn"
 
 # solver mode: CPU or GPU
 solver_mode: GPU
